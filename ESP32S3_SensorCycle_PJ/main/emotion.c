@@ -236,5 +236,36 @@ void performActionsBasedOnEmotion(EmotionProb *Zprob, bool *music_1_playing, boo
 
 
 
+/*计算最终情绪实现相应控制
+void sensorCycle_task(void *pvParameters)
+{
+    bpm_spo2_t data;
+    Message msg;
+    bool first_Receive_Data = false;
+    bool music_1_playing = false;
+    bool music_2_playing = false;
+    bool music_3_playing = false;
+    float start_bpm = 0;
+    float growth_rate = 0;
+    EmotionProb Hprob;
+    EmotionProb Fprob;
+    EmotionProb Zprob;
 
+    while (1)
+    {
+        if (xQueueReceive(data_queue1, &data, 0) == pdPASS)
+        {
+            processHeartRateData(data, &Hprob, &first_Receive_Data, &start_bpm, &growth_rate);
+        }
 
+        if (xQueueReceive(data_queue2, &msg, 0) == pdPASS)
+        {
+            processFacialEmotionData(msg, &Fprob, &Hprob, &Zprob);
+            calculateFinalEmotionProbabilities(&Fprob, &Hprob, &Zprob);
+            performActionsBasedOnEmotion(&Zprob, &music_1_playing, &music_2_playing, &music_3_playing);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+*/

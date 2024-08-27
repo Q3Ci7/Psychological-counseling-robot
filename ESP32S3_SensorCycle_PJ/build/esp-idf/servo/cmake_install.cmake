@@ -1,4 +1,4 @@
-# Install script for directory: D:/project/ESP/ESP32S3/ESP32S3_SensorCycle_PJ/components/servo
+# Install script for directory: D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/components/servo
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

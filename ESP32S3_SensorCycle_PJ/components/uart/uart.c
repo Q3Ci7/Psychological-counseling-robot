@@ -1,8 +1,8 @@
 #include "uart.h"
 
-/** 串口初�?�化
- * @param uart_num 串口号�?�置
- * @param baud_rate 波特率�?�置
+/** 串口初�?�化
+ * @param uart_num 串口号�?�置
+ * @param baud_rate 波特率�?�置
  */
 void init_uart()
 {
@@ -13,7 +13,7 @@ void init_uart()
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
     };
-
+    
     uart_driver_install(UART_NUM_0, BUF_SIZE * 2, 0, 0, NULL, 0);
     uart_param_config(UART_NUM_0, &uart_config);
     uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
