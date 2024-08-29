@@ -1,7 +1,8 @@
 #include "esp_check.h"
 #include "ws2812b.h"
 #include "driver/rmt_tx.h"
-
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 static const char *TAG = "led_encoder";
 
 #define LED_STRIP_RESOLUTION_HZ 10000000 // 10MHz 分辨率, 也就是1tick = 0.1us，也就是可以控制的最小时间单元，低于0.1us的脉冲无法产生
@@ -243,3 +244,46 @@ esp_err_t ws2812_write(ws2812_strip_handle_t handle,uint32_t index,uint32_t r,ui
     
 }
 
+
+
+esp_err_t ws2812_fade(ws2812_strip_handle_t handle, uint32_t start_index, uint32_t end_index, uint32_t start_r, uint32_t start_g, uint32_t start_b, uint32_t end_r, uint32_t end_g, uint32_t end_b, uint32_t steps, uint32_t delay_ms)
+{
+    if (start_index >= handle->led_num || end_index >= handle->led_num || start_index > end_index) {
+        return ESP_FAIL; // 无效的索引
+    }
+
+    uint32_t total_leds = end_index - start_index + 1;
+    if (total_leds == 0) {
+        return ESP_OK; // 没有 LED 需要处理
+    }
+
+    // 计算每一步的颜色增量
+    float step_r, step_g, step_b;
+    step_r = (float)(end_r - start_r) / (steps - 1);
+    step_g = (float)(end_g - start_g) / (steps - 1);
+    step_b = (float)(end_b - start_b) / (steps - 1);
+
+    for (uint32_t step = 0; step < steps; ++step) {
+        for (uint32_t i = start_index; i <= end_index; ++i) {
+            uint32_t current_r = (uint32_t)(start_r + step * step_r);
+            uint32_t current_g = (uint32_t)(start_g + step * step_g);
+            uint32_t current_b = (uint32_t)(start_b + step * step_b);
+
+            // 确保颜色值在合法范围内
+            current_r = (current_r > 255) ? 255 : (current_r < 0 ? 0 : current_r);
+            current_g = (current_g > 255) ? 255 : (current_g < 0 ? 0 : current_g);
+            current_b = (current_b > 255) ? 255 : (current_b < 0 ? 0 : current_b);
+
+            // 写入颜色数据
+            ws2812_write(handle, i, current_r, current_g, current_b);
+        }
+        vTaskDelay(pdMS_TO_TICKS(delay_ms)); // 等待一段时间，以便观察渐变效果
+    }
+
+    // 确保最终状态
+    for (uint32_t i = start_index; i <= end_index; ++i) {
+        ws2812_write(handle, i, end_r, end_g, end_b);
+    }
+
+    return ESP_OK;
+}

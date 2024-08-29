@@ -414,6 +414,11 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
+  include("D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/HCSR/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
   include("D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/audio/cmake_install.cmake")
 endif()
 
@@ -430,6 +435,11 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
   include("D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/gsr/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/microphone/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)

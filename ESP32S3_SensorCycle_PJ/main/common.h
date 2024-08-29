@@ -15,6 +15,7 @@
 #include "driver/rmt_tx.h"
 #include "driver/ledc.h"
 #include "driver/i2c.h"
+#include "driver/i2s.h"
 
 #include "esp_log.h"
 #include "esp_system.h"
@@ -25,6 +26,6 @@
 #include "../include/uart.h"
 #include "../max30102.h"
 
-
+#include <float.h> // °üº¬ FLT_MAX
 
 #endif // COMMON_H

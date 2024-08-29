@@ -70,18 +70,6 @@ void rx_uart_task(void *pvParameters)
             {
                 msg.emotype = 8;
             }
-            // else if (strstr((char *)data, "CALM"))
-            // {
-            //     msg.emotype = 7;
-            // }
-            // else if (strstr((char *)data, "POSITIVE"))
-            // {
-            //     msg.emotype = 7;
-            // }
-            // else if (strstr((char *)data, "NEGTIVE"))
-            // {
-            //     msg.emotype = 7;
-            // }
             else
             {
                 msg.emotype = -1; // unkown emotions

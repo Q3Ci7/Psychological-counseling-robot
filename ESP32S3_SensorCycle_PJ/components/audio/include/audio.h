@@ -46,4 +46,8 @@ void rx_uart_task(void *pvParameters);
  */
 void Audio(uint8_t num);
 void Audio_init(uint8_t playmode,uint8_t volume);
+
+
+
+void checkplystation();
 #endif

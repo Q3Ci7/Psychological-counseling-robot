@@ -47,7 +47,9 @@
         "esp_err.h": "c",
         "i2c.h": "c",
         "adc.h": "c",
-        "adc_continuous.h": "c"
+        "adc_continuous.h": "c",
+        "emotion.h": "c",
+        "hcsr.h": "c"
     },
     "idf.openOcdConfigs": [
         "board/esp32s3-builtin.cfg"

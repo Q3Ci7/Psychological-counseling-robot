@@ -619,6 +619,13 @@ D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/e
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/main/CMakeFiles/install.dir
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/main/CMakeFiles/install/local.dir
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/main/CMakeFiles/install/strip.dir
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/HCSR/CMakeFiles/__idf_HCSR.dir
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/HCSR/CMakeFiles/edit_cache.dir
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/HCSR/CMakeFiles/rebuild_cache.dir
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/HCSR/CMakeFiles/list_install_components.dir
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/HCSR/CMakeFiles/install.dir
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/HCSR/CMakeFiles/install/local.dir
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/HCSR/CMakeFiles/install/strip.dir
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/audio/CMakeFiles/__idf_audio.dir
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/audio/CMakeFiles/edit_cache.dir
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/audio/CMakeFiles/rebuild_cache.dir
@@ -647,6 +654,13 @@ D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/e
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/gsr/CMakeFiles/install.dir
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/gsr/CMakeFiles/install/local.dir
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/gsr/CMakeFiles/install/strip.dir
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/microphone/CMakeFiles/__idf_microphone.dir
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/microphone/CMakeFiles/edit_cache.dir
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/microphone/CMakeFiles/rebuild_cache.dir
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/microphone/CMakeFiles/list_install_components.dir
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/microphone/CMakeFiles/install.dir
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/microphone/CMakeFiles/install/local.dir
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/microphone/CMakeFiles/install/strip.dir
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/servo/CMakeFiles/__idf_servo.dir
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/servo/CMakeFiles/edit_cache.dir
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/servo/CMakeFiles/rebuild_cache.dir

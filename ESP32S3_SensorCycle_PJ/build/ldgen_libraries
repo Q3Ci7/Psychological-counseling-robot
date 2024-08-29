@@ -63,10 +63,12 @@ D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/e
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/usb/libusb.a
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/wifi_provisioning/libwifi_provisioning.a
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/main/libmain.a
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/HCSR/libHCSR.a
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/audio/libaudio.a
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/bpm/libbpm.a
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/gpio_ctrl/libgpio_ctrl.a
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/gsr/libgsr.a
+D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/microphone/libmicrophone.a
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/servo/libservo.a
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/uart/libuart.a
 D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ/build/esp-idf/ws2812b/libws2812b.a
