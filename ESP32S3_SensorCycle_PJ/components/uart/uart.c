@@ -13,10 +13,14 @@ void init_uart()
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
     };
-    
+
     uart_driver_install(UART_NUM_0, BUF_SIZE * 2, 0, 0, NULL, 0);
     uart_param_config(UART_NUM_0, &uart_config);
     uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+
+    uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 0, NULL, 0);
+    uart_param_config(UART_NUM_1, &uart_config);
+    uart_set_pin(UART_NUM_1, 16, 17, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
     uart_driver_install(UART_NUM_2, BUF_SIZE * 2, 0, 0, NULL, 0);
     uart_param_config(UART_NUM_2, &uart_config);
@@ -38,7 +42,15 @@ void rx_uart_task(void *pvParameters)
         {
             data[len] = '\0'; // Add "null" at the end of the sentence
 
-            if (strstr((char *)data, "surprise"))
+            if (strstr((char *)data, "self"))
+            {
+                msg.voicetype = 1;
+            }
+            else if (strstr((char *)data, "pic"))
+            {
+                msg.voicetype = 2;
+            }
+            else if (strstr((char *)data, "neutral"))
             {
                 msg.emotype = 1;
             }
@@ -46,33 +58,44 @@ void rx_uart_task(void *pvParameters)
             {
                 msg.emotype = 2;
             }
-            else if (strstr((char *)data, "neutral"))
+            else if (strstr((char *)data, "surprise"))
             {
                 msg.emotype = 3;
             }
-            else if (strstr((char *)data, "sad"))
+            else if (strstr((char *)data, "angry"))
             {
                 msg.emotype = 4;
             }
-            else if (strstr((char *)data, "disgust"))
+            else if (strstr((char *)data, "fear"))
             {
                 msg.emotype = 5;
             }
-            else if (strstr((char *)data, "fear"))
+            else if (strstr((char *)data, "disgust"))
             {
                 msg.emotype = 6;
             }
-            else if (strstr((char *)data, "angry"))
+            else if (strstr((char *)data, "sad"))
             {
                 msg.emotype = 7;
             }
-            else if (strstr((char *)data, "begin") || strstr((char *)data, "end"))
+            else if (strstr((char *)data, "m1"))
             {
-                msg.emotype = 8;
+                msg.musictype = 1;
+            }
+            else if (strstr((char *)data, "m2"))
+            {
+                msg.musictype = 2;
+            }
+            else if (strstr((char *)data, "m3"))
+            {
+                msg.musictype = 3;
+            }
+            else if (strstr((char *)data, "m4"))
+            {
+                msg.musictype = 4;
             }
             else
             {
-                msg.emotype = -1; // unkown emotions
                 ESP_LOGI("xQueueSend error:", "unknown emotions");
             }
 

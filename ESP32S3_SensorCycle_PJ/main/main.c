@@ -61,86 +61,124 @@ ws2812_strip_handle_t ws2812_handle = NULL;
 int idx = 0;         //
 uint8_t lednum = 12; // Number of WS2812B_LED
 
-uint8_t mod = 3;
 /***********************************/
 
 QueueHandle_t data_queue1; // Create queue handle
 QueueHandle_t data_queue2; // Create queue handle
 
-void sys_init()
+void lightbegin(uint8_t mode)
 {
-    init_uart();                            // Serial port initialization
-    ws2812_init(8, lednum, &ws2812_handle); // ws2812b initialization
-    servo_init(0, 6);                       // servo initialization
-
-    ultrasonic_init(); // ultrasonic initialization
-    A_stop();
-    ws2812_write(ws2812_handle, idx, 0, 0, 0); // Set initial RGB light color --  black(off)
-}
-
-void lightmode(uint8_t lednum)
-{
-    switch (mod)
+    uint8_t i;
+    switch (mode)
     {
-    // case 1: // 1 1 1 1 1 0 0 0 0
-    //     for (uint8_t i = 0; i < lednum; i++)
-    //     {
-    //         ws2812_write(ws2812_handle, i, r, g, b);
-    //         vTaskDelay(pdMS_TO_TICKS(100));
-    //     }
-    //     for (uint8_t i = 0; i < lednum; i++)
-    //     {
-    //         ws2812_write(ws2812_handle, i, 0, 0, 0);
-    //         vTaskDelay(pdMS_TO_TICKS(100));
-    //     }
-    //     break;
-    // case 2: // 0 0 0 0 0 1 0 0 0 0
-    //     for (uint8_t i = 0; i < lednum; i++)
-    //     {
-    //         ws2812_write(ws2812_handle, i, r, g, b);
-    //         vTaskDelay(pdMS_TO_TICKS(1000));
-    //         ws2812_write(ws2812_handle, i, 0, 0, 0);
-    //         vTaskDelay(pdMS_TO_TICKS(100));
-    //     }
-    //     break;
-    case 3:
-        for (uint8_t i = 1; i < lednum; i++)
+    case 1: // 单色 渐变 点亮熄灭3次
+        for (i = 1; i < 4; i++)
         {
-            switch (i)
+            for (i = 1; i < 4; i++)
             {
-            case 1:
-                ws2812_write(ws2812_handle, i, 0, 20, 0); // green
-                vTaskDelay(pdMS_TO_TICKS(200));
-                break;
-            case 2:
-                ws2812_write(ws2812_handle, i, 20, 20, 0); // yellow
-                vTaskDelay(pdMS_TO_TICKS(200));
-                break;
-            case 3:
-                ws2812_write(ws2812_handle, i, 25, 10, 0); // orange
-                vTaskDelay(pdMS_TO_TICKS(200));
-                break;
-            case 4:
-                ws2812_write(ws2812_handle, i, 25, 0, 0); // red
-                vTaskDelay(pdMS_TO_TICKS(200));
-                break;
-            case 5:
-                ws2812_write(ws2812_handle, i, 20, 0, 20); // purple
-                vTaskDelay(pdMS_TO_TICKS(200));
-                break;
-            case 6:
-                ws2812_write(ws2812_handle, i, 0, 0, 20); // deepblue
-                vTaskDelay(pdMS_TO_TICKS(200));
-                break;
-            case 7:
-                ws2812_write(ws2812_handle, i, 3, 14, 25); // lightblue
-                vTaskDelay(pdMS_TO_TICKS(200));
-                break;
+                ws2812_fade(ws2812_handle, 0, 11, 0, 0, 0, 50, 0, 0, 200, 50); // 使用200步
+                vTaskDelay(pdMS_TO_TICKS(500));
+                ws2812_fade(ws2812_handle, 0, 11, 50, 0, 0, 0, 0, 0, 200, 50); // 使用200步
+                vTaskDelay(pdMS_TO_TICKS(500));
             }
         }
         break;
-    default:
+    case 2: // 单色 循环依次点亮 再全部灭亮3次
+        for (i = 1; i < 12; i++)
+        {
+            ws2812_write(ws2812_handle, i, 10, 10, 10);
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+        for (uint8_t j = 0; j < 3; j++)
+        {
+            for (i = 1; i < 12; i++)
+            {
+                ws2812_write(ws2812_handle, i, 0, 0, 0);
+            }
+            vTaskDelay(pdMS_TO_TICKS(500));
+            for (i = 1; i < 12; i++)
+            {
+                ws2812_write(ws2812_handle, i, 10, 10, 10);
+            }
+            vTaskDelay(pdMS_TO_TICKS(500));
+        }
         break;
+    default: // 全部熄灭
+        for (i = 1; i < 12; i++)
+        {
+            ws2812_write(ws2812_handle, i, 0, 0, 0);
+        }
+        break;
+    }
+}
+
+void lightreset()
+{
+    for (uint8_t i = 1; i < 12; i++)
+    {
+        ws2812_write(ws2812_handle, i, 0, 0, 0);
+    }
+}
+
+void lightadd(uint8_t num,uint8_t r, uint8_t g,uint8_t b)
+{
+    for (uint8_t i = 1; i < num; i++)
+    {
+        ws2812_write(ws2812_handle, i, 0, 0, 0);
+    }
+}
+
+void lightmode_task(void *pvParameters)
+{
+    uint8_t i;
+    Message msg;
+    while (1)
+    {
+        if (xQueueReceive(data_queue2, &msg, 0) == pdPASS)
+        {
+            for (i = 1; i < msg.emotype; i++)
+            {
+                lightreset();
+                switch (i)
+                {
+                case 1:
+                    ws2812_write(ws2812_handle, i, 0, 20, 0); // green
+                    vTaskDelay(pdMS_TO_TICKS(200));
+                    break;
+                case 2:
+
+                    ws2812_write(ws2812_handle, i, 20, 20, 0); // yellow
+                    vTaskDelay(pdMS_TO_TICKS(200));
+                    break;
+                case 3:
+
+                    ws2812_write(ws2812_handle, i, 25, 10, 0); // orange
+                    vTaskDelay(pdMS_TO_TICKS(200));
+                    break;
+                case 4:
+
+                    ws2812_write(ws2812_handle, i, 25, 0, 0); // red
+                    vTaskDelay(pdMS_TO_TICKS(200));
+                    break;
+                case 5:
+
+                    ws2812_write(ws2812_handle, i, 20, 0, 20); // purple
+                    vTaskDelay(pdMS_TO_TICKS(200));
+                    break;
+                case 6:
+
+                    ws2812_write(ws2812_handle, i, 0, 0, 20); // deepblue
+                    vTaskDelay(pdMS_TO_TICKS(200));
+                    break;
+                case 7:
+
+                    ws2812_write(ws2812_handle, i, 3, 14, 25); // lightblue
+                    vTaskDelay(pdMS_TO_TICKS(200));
+                    break;
+                }
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 
@@ -149,17 +187,16 @@ void shake()
     float distance;
     float best_distance = FLT_MAX; // 初始化为最大值
     uint8_t best_angle = 0;        // 存储最佳角度
-
-    for (uint8_t i = 0; i <= 120; i++)
+    for (uint8_t i = 0; i <= 120; i += 5)
     {
         set_servo_angle(0, i); // 假设 `set_servo_angle` 函数控制舵机角度
 
         // 等待舵机移动到目标角度
-        vTaskDelay(200 / portTICK_PERIOD_MS); // 500 毫秒等待时间（根据实际情况调整）
+        vTaskDelay(300 / portTICK_PERIOD_MS); // 500 毫秒等待时间（根据实际情况调整）
         if (i != 0)
         {
             distance = ultrasonic_get_distance(); // 获取当前角度的距离
-            printf("Angle: %d°, Distance: %.2f cm\n", i, distance);
+            // printf("Angle: %d°, Distance: %.2f cm\n", i, distance);
             // 记录最小距离及其对应的角度
             if (distance >= 0 && distance < best_distance)
             {
@@ -168,10 +205,62 @@ void shake()
             }
         }
     }
-
     // 将舵机转到最佳角度
     set_servo_angle(0, best_angle);
-    printf("Best Angle: %d°, Best Distance: %.2f cm\n", best_angle, best_distance);
+    // printf("Best Angle: %d°, Best Distance: %.2f cm\n", best_angle, best_distance);
+}
+
+void psychic_run_task(void *pvParameters)
+{
+    Message msg;
+    while (1)
+    {
+        if (xQueueReceive(data_queue2, &msg, 0) == pdPASS)
+        {
+            switch (msg.voicetype)
+            {
+            case 1:
+                A_choose(1);
+                shake();
+                uart_write_bytes(UART_NUM_2, "selfend", strlen("selfend"));
+                break;
+            case 2:
+                A_choose(2);
+                break;
+            }
+            switch (msg.musictype)
+            {
+            case 1:
+                A_choose(3);
+                checkplystation();
+                break;
+            case 2:
+                A_choose(4);
+                checkplystation();
+                break;
+            case 3:
+                A_choose(5);
+                checkplystation();
+                break;
+            case 4:
+                A_choose(6);
+                checkplystation();
+                break;
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+}
+
+void sys_init()
+{
+    init_uart();                            // Serial port initialization
+    ws2812_init(8, lednum, &ws2812_handle); // ws2812b initialization
+    servo_init(0, 6);                       // servo initialization
+    Audio_init(2, 10);                      // Audio playback initialization       param1 == Single stop; param2 === volume10(Max. 30)
+    ultrasonic_init();                      // ultrasonic initialization
+    A_stop();
+    lightbegin(2);
 }
 
 void app_main()
@@ -180,35 +269,34 @@ void app_main()
     sys_init(); // System initialization
 
     /**************CREATE QUEUE**************/
-    // data_queue1 = xQueueCreate(10, sizeof(bpm_spo2_t));
-    // if (data_queue1 == NULL)
-    // {
-    //     ESP_LOGE("Queue", "Queue1 creation failed!");
-    // }
-    // data_queue2 = xQueueCreate(10, sizeof(Message));
-    // if (data_queue2 == NULL)
-    // {
-    //     ESP_LOGE("Queue", "Queue2 creation failed!");
-    // }
+    data_queue2 = xQueueCreate(10, sizeof(Message));
+    if (data_queue2 == NULL)
+    {
+        ESP_LOGE("Queue", "Queue2 creation failed!");
+    }
     /***********************************/
 
     /************FOR TSET**********/
     // ws2812_write(ws2812_handle, idx, 80, 80, 0);
     // lightmode(0, 0, 20);
-    // Audio_init(1, 10);
+
     // A_choose(2);
+    // checkplystation();
+
     // shake();
     // warm_begin();
 
     /***********************************/
 
     /**************CREATE TASK**************/
-    // xTaskCreate(rx_uart_task, "rx_uart_task", 4096, NULL, 5, NULL);         // Serial port receives data
+    xTaskCreate(lightmode_task, "lightmode_task", 4096, NULL, 5, NULL);     // Serial port receives data
+    xTaskCreate(psychic_run_task, "psychic_run_task", 4096, NULL, 5, NULL); // Serial port receives data
+    xTaskCreate(rx_uart_task, "rx_uart_task", 4096, NULL, 5, NULL);         // Serial port receives data
     /***********************************/
 
     while (1)
     {
-        lightmode(4);
+
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 

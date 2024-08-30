@@ -25,7 +25,7 @@ uint8_t calculate_checksum(const uint8_t *command, size_t size)
  */
 void send_command(const uint8_t *data, size_t len)
 {
-    uart_write_bytes(UART_NUM_0, (const char *)data, len);
+    uart_write_bytes(UART_NUM_1, (const char *)data, len);
 }
 
 /** 开始播放音频
@@ -122,31 +122,39 @@ void A_setCyclemode(uint8_t mode)
  */
 void checkplystation()
 {
+    uint8_t A_flag = 1;
     uint8_t data[BUF_0_SIZE];
     uint8_t command[] = {0xAA, 0x01, 0x00, 0xAB};
+    const uint8_t sequence1[] = {0xaa, 0x01, 0x01, 0x00, 0xac}; // 停止
 
-    // uint8_t checksum = calculate_checksum(command, sizeof(command));
-    // command[sizeof(command) - 1] = checksum;
-    send_command(command, sizeof(command));
-
-    // // 打印发送的命令和校验和
-    // ESP_LOGI(UART_TAG, "Command sent:");
-    // for (int i = 0; i < sizeof(command); i++)
-    // {
-    //     ESP_LOGI(UART_TAG, "command[%d]: %02X ", i, command[i]);
-    // }
-
-    // 等待一段时间，让设备处理命令并返回数据
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    int len = uart_read_bytes(UART_NUM_0, data, BUF_0_SIZE, 100 / portTICK_PERIOD_MS);
-    if (len > 0)
+    // const uint8_t sequence2[] = {0xaa, 0x01, 0x01, 0x01, 0xad};//播放
+    // const uint8_t sequence3[] = {0xaa, 0x01, 0x01, 0x02, 0xae};//暂停
+    size_t length = sizeof(sequence1) / sizeof(sequence1[0]);
+    do
     {
-        uart_write_bytes(UART_NUM_2, (const char *)data, len);
-    }
-    else
-    {
-        uart_write_bytes(UART_NUM_2, "no data", strlen("no data"));
-    }
+        send_command(command, sizeof(command));
+        // 等待一段时间，让设备处理命令并返回数据
+        vTaskDelay(pdMS_TO_TICKS(500));
+        int len = uart_read_bytes(UART_NUM_1, data, BUF_0_SIZE, 100 / portTICK_PERIOD_MS); // 判断是否接收到语音模块在uart1上传回的数据
+        if (len > 0)
+        {
+            int result = memcmp(data, sequence1, length);
+            // uart_write_bytes(UART_NUM_0, (const char *)data, len);//打印接收到的数据
+            if (result == 0)
+            {
+                // uart_write_bytes(UART_NUM_2,"stpply", strlen("stpply"));//通过uart2将数据发出
+                A_flag = 0;
+                ESP_LOGI("UART_NUM_1:", "0");
+            }
+            else
+            {
+                A_flag = 1;
+                ESP_LOGI("UART_NUM_1:", "1");
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }while(A_flag);
+    uart_write_bytes(UART_NUM_0,"playend", strlen("playend"));
 }
 
 /** 音频播放
