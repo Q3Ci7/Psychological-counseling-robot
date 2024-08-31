@@ -9,8 +9,9 @@
 typedef struct
 {
     uint8_t emotype;
-    uint8_t voicetype;
-    uint8_t musictype;
+    // uint8_t voicetype;
+    // uint8_t musictype;
+    uint8_t msgtype;
 } Message;
 
 extern QueueHandle_t data_queue2;

@@ -33,7 +33,7 @@ void init_uart()
 void rx_uart_task(void *pvParameters)
 {
     static Message msg;
-    msg.emotype = 0;
+    msg.msgtype = 0;
     uint8_t *data = (uint8_t *)malloc(BUF_SIZE);
     while (1)
     {
@@ -44,55 +44,55 @@ void rx_uart_task(void *pvParameters)
 
             if (strstr((char *)data, "self"))
             {
-                msg.voicetype = 1;
+                msg.msgtype = 1;
             }
             else if (strstr((char *)data, "pic"))
             {
-                msg.voicetype = 2;
+                msg.msgtype = 2;
             }
             else if (strstr((char *)data, "neutral"))
             {
-                msg.emotype = 1;
+                msg.msgtype = 3;
             }
             else if (strstr((char *)data, "happy"))
             {
-                msg.emotype = 2;
+                msg.msgtype = 4;
             }
             else if (strstr((char *)data, "surprise"))
             {
-                msg.emotype = 3;
+                msg.msgtype = 5;
             }
             else if (strstr((char *)data, "angry"))
             {
-                msg.emotype = 4;
+                msg.msgtype = 6;
             }
             else if (strstr((char *)data, "fear"))
             {
-                msg.emotype = 5;
+                msg.msgtype = 7;
             }
             else if (strstr((char *)data, "disgust"))
             {
-                msg.emotype = 6;
+                msg.msgtype = 8;
             }
             else if (strstr((char *)data, "sad"))
             {
-                msg.emotype = 7;
+                msg.msgtype = 9;
             }
             else if (strstr((char *)data, "m1"))
             {
-                msg.musictype = 1;
+                msg.msgtype = 10;
             }
             else if (strstr((char *)data, "m2"))
             {
-                msg.musictype = 2;
+                msg.msgtype = 11;
             }
             else if (strstr((char *)data, "m3"))
             {
-                msg.musictype = 3;
+                msg.msgtype = 12;
             }
             else if (strstr((char *)data, "m4"))
             {
-                msg.musictype = 4;
+                msg.msgtype = 13;
             }
             else
             {

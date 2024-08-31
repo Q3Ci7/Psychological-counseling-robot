@@ -40,11 +40,11 @@
 #include "audio.h"
 #include "ws2812b.h"
 // #include "gsr.h"
-#include "gpio_ctrl.h"
-#include "bpm.h"
+// #include "gpio_ctrl.h"
+// #include "bpm.h"
 #include "uart.h"
 #include "servo.h"
-#include "emotion.h"
+// #include "emotion.h"
 #include "microphone.h"
 #include "HCSR.h"
 
@@ -84,19 +84,19 @@ void lightbegin(uint8_t mode)
         }
         break;
     case 2: // 单色 循环依次点亮 再全部灭亮3次
-        for (i = 1; i < 12; i++)
+        for (i = 0; i < 12; i++)
         {
             ws2812_write(ws2812_handle, i, 10, 10, 10);
             vTaskDelay(pdMS_TO_TICKS(50));
         }
         for (uint8_t j = 0; j < 3; j++)
         {
-            for (i = 1; i < 12; i++)
+            for (i = 0; i < 12; i++)
             {
                 ws2812_write(ws2812_handle, i, 0, 0, 0);
             }
             vTaskDelay(pdMS_TO_TICKS(500));
-            for (i = 1; i < 12; i++)
+            for (i = 0; i < 12; i++)
             {
                 ws2812_write(ws2812_handle, i, 10, 10, 10);
             }
@@ -114,17 +114,49 @@ void lightbegin(uint8_t mode)
 
 void lightreset()
 {
-    for (uint8_t i = 1; i < 12; i++)
+    for (uint8_t i = 0; i < 12; i++)
     {
         ws2812_write(ws2812_handle, i, 0, 0, 0);
     }
 }
 
-void lightadd(uint8_t num,uint8_t r, uint8_t g,uint8_t b)
+void lightadd(uint8_t num, uint8_t r, uint8_t g, uint8_t b)
 {
-    for (uint8_t i = 1; i < num; i++)
+    for (uint8_t i = 0; i < num; i++)
     {
-        ws2812_write(ws2812_handle, i, 0, 0, 0);
+        ws2812_write(ws2812_handle, i, r, g, b);
+    }
+}
+
+void lightadd2(uint8_t num)
+{
+    if (num >= 0)
+    {
+        ws2812_write(ws2812_handle, 0, 0, 20, 0);
+    }
+    if (num >= 1)
+    {
+        ws2812_write(ws2812_handle, 1, 20, 20, 0);
+    }
+    if (num >= 2)
+    {
+        ws2812_write(ws2812_handle, 2, 25, 10, 0);
+    }
+    if (num >= 3)
+    {
+        ws2812_write(ws2812_handle, 3, 25, 0, 0);
+    }
+    if (num >= 4)
+    {
+        ws2812_write(ws2812_handle, 4, 20, 0, 20);
+    }
+    if (num >= 5)
+    {
+        ws2812_write(ws2812_handle, 5, 0, 0, 20);
+    }
+    if (num >= 6)
+    {
+        ws2812_write(ws2812_handle, 6, 3, 14, 25);
     }
 }
 
@@ -136,43 +168,43 @@ void lightmode_task(void *pvParameters)
     {
         if (xQueueReceive(data_queue2, &msg, 0) == pdPASS)
         {
-            for (i = 1; i < msg.emotype; i++)
+            for (i = 1; i < msg.msgtype; i++)
             {
-                lightreset();
                 switch (i)
                 {
                 case 1:
-                    ws2812_write(ws2812_handle, i, 0, 20, 0); // green
+
+                    lightadd(i, 0, 20, 0); // green
                     vTaskDelay(pdMS_TO_TICKS(200));
                     break;
                 case 2:
 
-                    ws2812_write(ws2812_handle, i, 20, 20, 0); // yellow
+                    lightadd(i, 20, 20, 0); // yellow
                     vTaskDelay(pdMS_TO_TICKS(200));
                     break;
                 case 3:
 
-                    ws2812_write(ws2812_handle, i, 25, 10, 0); // orange
+                    lightadd(i, 25, 10, 0); // orange
                     vTaskDelay(pdMS_TO_TICKS(200));
                     break;
                 case 4:
 
-                    ws2812_write(ws2812_handle, i, 25, 0, 0); // red
+                    lightadd(i, 25, 0, 0); // red
                     vTaskDelay(pdMS_TO_TICKS(200));
                     break;
                 case 5:
 
-                    ws2812_write(ws2812_handle, i, 20, 0, 20); // purple
+                    lightadd(i, 20, 0, 20); // purple
                     vTaskDelay(pdMS_TO_TICKS(200));
                     break;
                 case 6:
 
-                    ws2812_write(ws2812_handle, i, 0, 0, 20); // deepblue
+                    lightadd(i, 0, 0, 20); // deepblue
                     vTaskDelay(pdMS_TO_TICKS(200));
                     break;
                 case 7:
 
-                    ws2812_write(ws2812_handle, i, 3, 14, 25); // lightblue
+                    lightadd(i, 3, 14, 25); // lightblue
                     vTaskDelay(pdMS_TO_TICKS(200));
                     break;
                 }
@@ -217,32 +249,63 @@ void psychic_run_task(void *pvParameters)
     {
         if (xQueueReceive(data_queue2, &msg, 0) == pdPASS)
         {
-            switch (msg.voicetype)
+            switch (msg.msgtype)
             {
             case 1:
+                Audio_init(2, 30);
                 A_choose(1);
                 shake();
                 uart_write_bytes(UART_NUM_2, "selfend", strlen("selfend"));
                 break;
             case 2:
+                Audio_init(2, 30);
                 A_choose(2);
                 break;
-            }
-            switch (msg.musictype)
-            {
-            case 1:
+            case 3:
+                lightreset();
+                lightadd2(msg.msgtype - 3); // green
+                break;
+            case 4:
+                lightreset();
+                lightadd2(msg.msgtype - 3); // green // yellow
+                break;
+            case 5:
+                lightreset();
+                lightadd2(msg.msgtype - 3); // green// orange
+                break;
+            case 6:
+                lightreset();
+                lightadd2(msg.msgtype - 3); // green // red
+                break;
+            case 7:
+                lightreset();
+                lightadd2(msg.msgtype - 3); // green // purple
+                break;
+            case 8:
+                lightreset();
+                lightadd2(msg.msgtype - 3); // green // deepblue
+                break;
+            case 9:
+                lightreset();
+                lightadd2(msg.msgtype - 3); // green // lightblue
+                break;
+            case 10:
+                Audio_init(2, 10);
                 A_choose(3);
                 checkplystation();
                 break;
-            case 2:
+            case 11:
+                Audio_init(2, 10);
                 A_choose(4);
                 checkplystation();
                 break;
-            case 3:
+            case 12:
+                Audio_init(2, 10);
                 A_choose(5);
                 checkplystation();
                 break;
-            case 4:
+            case 13:
+                Audio_init(2, 10);
                 A_choose(6);
                 checkplystation();
                 break;
@@ -257,11 +320,15 @@ void sys_init()
     init_uart();                            // Serial port initialization
     ws2812_init(8, lednum, &ws2812_handle); // ws2812b initialization
     servo_init(0, 6);                       // servo initialization
-    Audio_init(2, 10);                      // Audio playback initialization       param1 == Single stop; param2 === volume10(Max. 30)
-    ultrasonic_init();                      // ultrasonic initialization
+
+    ultrasonic_init(); // ultrasonic initialization
     A_stop();
     lightbegin(2);
 }
+
+
+
+
 
 void app_main()
 {
@@ -279,9 +346,9 @@ void app_main()
     /************FOR TSET**********/
     // ws2812_write(ws2812_handle, idx, 80, 80, 0);
     // lightmode(0, 0, 20);
-
-    // A_choose(2);
-    // checkplystation();
+    Audio_init(2, 10);
+    A_choose(3);
+    checkplystation();
 
     // shake();
     // warm_begin();
@@ -289,15 +356,15 @@ void app_main()
     /***********************************/
 
     /**************CREATE TASK**************/
-    xTaskCreate(lightmode_task, "lightmode_task", 4096, NULL, 5, NULL);     // Serial port receives data
-    xTaskCreate(psychic_run_task, "psychic_run_task", 4096, NULL, 5, NULL); // Serial port receives data
-    xTaskCreate(rx_uart_task, "rx_uart_task", 4096, NULL, 5, NULL);         // Serial port receives data
+    // xTaskCreate(lightmode_task, "lightmode_task", 4096, NULL, 5, NULL);     // Serial port receives data
+
+    // xTaskCreate(rx_uart_task, "rx_uart_task", 4096, NULL, 5, NULL);         // Serial port receives data
+    // xTaskCreate(psychic_run_task, "psychic_run_task", 4096, NULL, 5, NULL); // Serial port receives data
     /***********************************/
 
     while (1)
     {
-
-        vTaskDelay(pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
     // ws2812_deinit(ws2812_handle);
