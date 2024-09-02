@@ -32,8 +32,10 @@ void init_uart()
  */
 void rx_uart_task(void *pvParameters)
 {
-    static Message msg;
+    Message msg;
+    EMO emo;
     msg.msgtype = 0;
+    emo.emotype = 0;
     uint8_t *data = (uint8_t *)malloc(BUF_SIZE);
     while (1)
     {
@@ -45,64 +47,135 @@ void rx_uart_task(void *pvParameters)
             if (strstr((char *)data, "self"))
             {
                 msg.msgtype = 1;
+                if (xQueueSend(data_queue2, &msg, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+                }
             }
             else if (strstr((char *)data, "pic"))
             {
                 msg.msgtype = 2;
+                if (xQueueSend(data_queue2, &msg, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+                }
             }
             else if (strstr((char *)data, "neutral"))
             {
-                msg.msgtype = 3;
+                // msg.msgtype = 3;
+                emo.emotype = 1;
+                if (xQueueSend(data_queue3, &emo, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+                }
             }
             else if (strstr((char *)data, "happy"))
             {
-                msg.msgtype = 4;
+                // msg.msgtype = 4;
+                emo.emotype = 2;
+                if (xQueueSend(data_queue3, &emo, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+                }
             }
             else if (strstr((char *)data, "surprise"))
             {
-                msg.msgtype = 5;
+                // msg.msgtype = 5;
+                emo.emotype = 3;
+                if (xQueueSend(data_queue3, &emo, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+                }
             }
             else if (strstr((char *)data, "angry"))
             {
-                msg.msgtype = 6;
+                // msg.msgtype = 6;
+                emo.emotype = 4;
+                if (xQueueSend(data_queue3, &emo, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+                }
             }
             else if (strstr((char *)data, "fear"))
             {
-                msg.msgtype = 7;
+                // msg.msgtype = 7;
+                emo.emotype = 5;
+                if (xQueueSend(data_queue3, &emo, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+                }
             }
             else if (strstr((char *)data, "disgust"))
             {
-                msg.msgtype = 8;
+                // msg.msgtype = 8;
+                emo.emotype = 6;
+                if (xQueueSend(data_queue3, &emo, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+                }
             }
             else if (strstr((char *)data, "sad"))
             {
-                msg.msgtype = 9;
+                // msg.msgtype = 9;
+                emo.emotype = 7;
+                if (xQueueSend(data_queue3, &emo, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+                }
             }
             else if (strstr((char *)data, "m1"))
             {
                 msg.msgtype = 10;
+                if (xQueueSend(data_queue2, &msg, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+                }
             }
             else if (strstr((char *)data, "m2"))
             {
                 msg.msgtype = 11;
+                if (xQueueSend(data_queue2, &msg, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+                }
             }
             else if (strstr((char *)data, "m3"))
             {
                 msg.msgtype = 12;
+                if (xQueueSend(data_queue2, &msg, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+                }
             }
             else if (strstr((char *)data, "m4"))
             {
                 msg.msgtype = 13;
+                if (xQueueSend(data_queue2, &msg, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+                }
+            }
+            else if (strstr((char *)data, "stopplay"))
+            {
+                msg.msgtype = 14;
+                if (xQueueSend(data_queue2, &msg, portMAX_DELAY) != pdPASS)
+                {
+                    ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+                }
             }
             else
             {
                 ESP_LOGI("xQueueSend error:", "unknown emotions");
             }
 
-            if (xQueueSend(data_queue2, &msg, portMAX_DELAY) != pdPASS)
-            {
-                ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
-            }
+            // if (xQueueSend(data_queue2, &msg, portMAX_DELAY) != pdPASS)
+            // {
+            //     ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+            // }
+            // if (xQueueSend(data_queue3, &emo, portMAX_DELAY) != pdPASS)
+            // {
+            //     ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
+            // }
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }

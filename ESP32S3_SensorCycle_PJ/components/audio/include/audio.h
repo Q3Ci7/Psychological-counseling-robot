@@ -3,6 +3,23 @@
 
 #include "common.h"
 
+
+
+
+
+
+
+// static TaskHandle_t check_playback_task_handle = NULL;
+// static SemaphoreHandle_t control_semaphore;
+
+extern volatile bool task_control_flag;//任务控制变量
+
+
+
+
+
+
+
 /** 计算数据包校验和
  * @param command 指向包含命令数据包的数组的指针
  * @param size 数组的大小（以字节为单位），包括数据和校验和字段
@@ -49,5 +66,6 @@ void Audio_init(uint8_t playmode,uint8_t volume);
 
 
 
-void checkplystation();
+// void checkplystation();
+void checkplystation(void *pvParameter);
 #endif

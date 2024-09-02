@@ -1,4 +1,4 @@
-# Install script for directory: D:/project/ESP/ESP32S3/ESP32S3_SensorCycle_PJ(V1.2.0)
+# Install script for directory: D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ(V1.2.0)
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,7 +39,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("D:/project/ESP/ESP32S3/ESP32S3_SensorCycle_PJ(V1.2.0)/build/esp-idf/cmake_install.cmake")
+  include("D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ(V1.2.0)/build/esp-idf/cmake_install.cmake")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "D:/project/ESP/ESP32S3/ESP32S3_SensorCycle_PJ(V1.2.0)/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ(V1.2.0)/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

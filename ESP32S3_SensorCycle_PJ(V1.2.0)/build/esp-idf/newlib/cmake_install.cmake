@@ -39,6 +39,6 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("D:/project/ESP/ESP32S3/ESP32S3_SensorCycle_PJ(V1.2.0)/build/esp-idf/newlib/port/cmake_install.cmake")
+  include("D:/Github-workfile/Psychological-counseling-robot/ESP32S3_SensorCycle_PJ(V1.2.0)/build/esp-idf/newlib/port/cmake_install.cmake")
 endif()
 
