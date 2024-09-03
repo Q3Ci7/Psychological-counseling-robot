@@ -68,6 +68,7 @@ uint8_t lednum = 12; // Number of WS2812B_LED
 QueueHandle_t data_queue2; // Create queue handle
 QueueHandle_t data_queue3; // Create queue handle
 static TaskHandle_t check_task_handle = NULL;
+volatile bool task_control_flag = false;
 
 void lightbegin(uint8_t mode)
 {
@@ -176,6 +177,7 @@ void lightmode_task(void *pvParameters)
         switch (num)
         {
         case 1:
+            lightreset();
             //                             r  g  b
             ws2812_write(ws2812_handle, 0, 0, 2, 0); // g
             vTaskDelay(pdMS_TO_TICKS(delaytime));
@@ -203,6 +205,7 @@ void lightmode_task(void *pvParameters)
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             break;
         case 2:
+            lightreset();
             ws2812_write(ws2812_handle, 0, 20, 20, 0); // y
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             ws2812_write(ws2812_handle, 1, 19, 20, 0);
@@ -229,6 +232,7 @@ void lightmode_task(void *pvParameters)
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             break;
         case 3:
+            lightreset();
             ws2812_write(ws2812_handle, 0, 25, 2, 0); // o
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             ws2812_write(ws2812_handle, 1, 22, 4, 0);
@@ -255,6 +259,7 @@ void lightmode_task(void *pvParameters)
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             break;
         case 4:
+            lightreset();
             ws2812_write(ws2812_handle, 0, 25, 0, 0); // r
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             ws2812_write(ws2812_handle, 1, 22, 4, 0);
@@ -281,6 +286,7 @@ void lightmode_task(void *pvParameters)
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             break;
         case 5:
+            lightreset();
             ws2812_write(ws2812_handle, 0, 24, 0, 24); // p
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             ws2812_write(ws2812_handle, 1, 22, 2, 22);
@@ -307,6 +313,7 @@ void lightmode_task(void *pvParameters)
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             break;
         case 6:
+            lightreset();
             ws2812_write(ws2812_handle, 0, 0, 0, 24); // db
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             ws2812_write(ws2812_handle, 1, 0, 2, 22);
@@ -333,6 +340,7 @@ void lightmode_task(void *pvParameters)
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             break;
         case 7:
+            lightreset();
             ws2812_write(ws2812_handle, 0, 10, 10, 20); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             ws2812_write(ws2812_handle, 1, 0, 0, 20); // db
@@ -358,12 +366,14 @@ void lightmode_task(void *pvParameters)
             ws2812_write(ws2812_handle, 11, 0, 20, 0); // g
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             break;
-        default:
+        case 8:
             lightreset();
+            break;
+        default:
+
             break;
         }
         vTaskDelay(pdMS_TO_TICKS(1000));
-        lightreset();
     }
 }
 
@@ -474,9 +484,9 @@ void shake()
         {
             uint8_t angle = flip_flag ? count1 : (30 - count1);
 
-            set_servo_angle(2, angle);    // 手部舵机
-            set_servo_angle(1, angle);    // 头部舵机
-            vTaskDelay(pdMS_TO_TICKS(5)); // 5ms延时
+            set_servo_angle(2, angle);      // 手部舵机
+            set_servo_angle(1, 30 - angle); // 头部舵机
+            vTaskDelay(pdMS_TO_TICKS(50));   // 5ms延时
         }
         else
         {
@@ -493,7 +503,7 @@ void shake()
             if (i != 0)
             {
                 distance = ultrasonic_get_distance(); // 获取当前角度的距离
-
+                // printf("distance:%.2fcm\n", distance);
                 // 记录最小距离及其对应的角度
                 if (distance >= 0 && distance < best_distance)
                 {
@@ -510,25 +520,35 @@ void shake()
 #endif
 
 //***************************************************************** */
-void resume_check_task() {
-    if (check_task_handle != NULL) {
+void resume_check_task()
+{
+    if (check_task_handle != NULL)
+    {
         // Check if the task is suspended before resuming
-        if (eTaskGetState(check_task_handle) == eSuspended) {
+        if (eTaskGetState(check_task_handle) == eSuspended)
+        {
             vTaskResume(check_task_handle);
             ESP_LOGI("task_control", "Task resumed");
-        } else {
+        }
+        else
+        {
             ESP_LOGI("task_control", "Task is already running or not suspended");
         }
     }
 }
 
-void suspend_check_task() {
-    if (check_task_handle != NULL) {
+void suspend_check_task()
+{
+    if (check_task_handle != NULL)
+    {
         // Check if the task is running before suspending
-        if (eTaskGetState(check_task_handle) == eRunning) {
+        if (eTaskGetState(check_task_handle) == eRunning)
+        {
             vTaskSuspend(check_task_handle);
             ESP_LOGI("task_control", "Task suspended");
-        } else {
+        }
+        else
+        {
             ESP_LOGI("task_control", "Task is already suspended or not running");
         }
     }
@@ -556,79 +576,31 @@ void psychic_run_task(void *pvParameters)
                 A_choose(2);
                 ESP_LOGI("msgtype", "2");
                 break;
-            // case 3:
-            //     lightreset();
-            //     lightadd2(msg.msgtype - 3); // green
-            //     ESP_LOGI("msgtype", "3");
-            //     break;
-            // case 4:
-            //     lightreset();
-            //     lightadd2(msg.msgtype - 3); // yellow
-            //     ESP_LOGI("msgtype", "4");
-            //     break;
-            // case 5:
-            //     lightreset();
-            //     lightadd2(msg.msgtype - 3); // orange
-            //     ESP_LOGI("msgtype", "5");
-            //     break;
-            // case 6:
-            //     lightreset();
-            //     lightadd2(msg.msgtype - 3); // red
-            //     ESP_LOGI("msgtype", "6");
-            //     break;
-            // case 7:
-            //     lightreset();
-            //     lightadd2(msg.msgtype - 3);  // purple
-            //     ESP_LOGI("msgtype", "7");
-            //     break;
-            // case 8:
-            //     lightreset();
-            //     lightadd2(msg.msgtype - 3);  // deepblue
-            //     ESP_LOGI("msgtype", "8");
-            //     break;
-            // case 9:
-            //     lightreset();
-            //     lightadd2(msg.msgtype - 3);  // lightblue
-            //     ESP_LOGI("msgtype", "9");
-            //     break;
             case 10:
-                // num = 0;
-                // Audio_init(2, music_volume);
-                // A_choose(3);
-                // resume_check_task(); // 恢复
-                // ESP_LOGI("msgtype", "10");
-                // break;
             case 11:
-                // num = 0;
-                // Audio_init(2, music_volume);
-                // A_choose(4);
-                // resume_check_task(); // 恢复
-                // ESP_LOGI("msgtype", "11");
-                // break;
             case 12:
-                // num = 0;
-                // Audio_init(2, music_volume);
-                // A_choose(5);
-                // resume_check_task(); // 恢复
-                // ESP_LOGI("msgtype", "12");
-                // break;
             case 13:
-                num = 0;
+                num = 8;
                 Audio_init(2, music_volume);
-                A_choose(msg.msgtype-7);
-                resume_check_task(); // 恢复
+                A_choose(msg.msgtype - 7);
+
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                task_control_flag = true;
+                // resume_check_task(); // 恢复
                 ESP_LOGI("msgtype", "%d", msg.msgtype);
                 break;
             case 14:
-                num = 0;
-                suspend_check_task(); // 挂起
+                num = 8;
+                // suspend_check_task(); // 挂起
+                task_control_flag = false;
+                vTaskDelay(pdMS_TO_TICKS(1000));
                 A_stop();
                 ESP_LOGI("msgtype", "14");
                 break;
             default:
-                num = 0;
-                A_stop();
-                suspend_check_task(); // 挂起
+                // num = 0;
+                // A_stop();
+                // suspend_check_task(); // 挂起
                 break;
             }
         }
@@ -655,7 +627,8 @@ void app_main()
     /**************CREATE QUEUE**************/
     data_queue2 = xQueueCreate(10, sizeof(Message));
     data_queue3 = xQueueCreate(10, sizeof(EMO));
-    if (data_queue2 == NULL || data_queue3 == NULL) {
+    if (data_queue2 == NULL || data_queue3 == NULL)
+    {
         ESP_LOGE("Queue", "Queue creation failed!");
         return;
     }
@@ -683,16 +656,15 @@ void app_main()
     /***********************************/
 
     /**************CREATE TASK**************/
-    xTaskCreate(lightmode_task, "lightmode_task", 4096, NULL, 5, NULL); // Serial port receives data
+    xTaskCreate(lightmode_task, "lightmode_task", 4096, NULL, 5, NULL);     // Serial port receives data
     xTaskCreate(rx_uart_task, "rx_uart_task", 4096, NULL, 5, NULL);         // Serial port receives data
     xTaskCreate(psychic_run_task, "psychic_run_task", 4096, NULL, 5, NULL); // Serial port receives data
-    xTaskCreate(checkplystation, "checkplystation", 4096, NULL, 5, check_task_handle);
-    // vTaskSuspend(check_task_handle); // Suspend the check task handle task
+    xTaskCreate(checkplystation, "checkplystation", 4096, NULL, 5, &check_task_handle);
     /***********************************/
 
     while (1)
     {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
-    // ws2812_deinit(ws2812_handle);
+    ws2812_deinit(ws2812_handle);
 }

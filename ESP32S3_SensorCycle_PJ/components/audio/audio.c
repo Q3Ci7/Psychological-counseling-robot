@@ -170,34 +170,33 @@ void checkplystation(void *pvParameter)
 
     while (1)
     {
-        send_command(command, sizeof(command));
-        vTaskDelay(pdMS_TO_TICKS(500));
-        int len = uart_read_bytes(UART_NUM_1, data, BUF_0_SIZE, 100 / portTICK_PERIOD_MS);
 
-        if (len > 0)
+        if (task_control_flag)
         {
-            int result = memcmp(data, sequence1, length);
-            if (result == 0)
+            send_command(command, sizeof(command));
+            vTaskDelay(pdMS_TO_TICKS(500));
+            int len = uart_read_bytes(UART_NUM_1, data, BUF_0_SIZE, 100 / portTICK_PERIOD_MS);
+
+            if (len > 0)
             {
-                A_flag = 0;
-                ESP_LOGI("ply_statu", "0");
-            }
-            else
-            {
-                A_flag = 1;
-                ESP_LOGI("ply_statu", "1");
+                int result = memcmp(data, sequence1, length);
+                if (result == 0)
+                {
+                    // A_flag = 0;
+                    task_control_flag = false;
+                    ESP_LOGI("ply_statu", "0");
+                    uart_write_bytes(UART_NUM_2, "playend", strlen("playend"));
+                    ESP_LOGI("ply_statu", "Suspending task");
+                }
+                else
+                {
+                    // A_flag = 1;
+                    ESP_LOGI("ply_statu", "1");
+                }
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(2000));
-
-        if (A_flag == 0)
-        {
-            uart_write_bytes(UART_NUM_2, "playend", strlen("playend"));
-            ESP_LOGI("ply_statu", "Suspending task");
-            vTaskSuspend(NULL); // 挂起当前任务
-        }
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
-    // vTaskDelete(NULL); // 不调用
 }
 
 #endif
