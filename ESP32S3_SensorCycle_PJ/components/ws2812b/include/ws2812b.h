@@ -14,34 +14,18 @@ extern "C" {
 
 
 typedef struct ws2812_strip_t *ws2812_strip_handle_t;
+extern ws2812_strip_handle_t ws2812_handle;
 
-/** 初始化WS2812外设
- * @param gpio 控制WS2812的管脚
- * @param maxled 控制WS2812的个数
- * @param led_handle 返回的控制句柄
- * @return ESP_OK or ESP_FAIL
-*/
+
 esp_err_t ws2812_init(gpio_num_t gpio,int maxled,ws2812_strip_handle_t* led_handle);
-
-/** 反初始化WS2812外设,释放 ws2812b 控制库的资源
- * @param handle 初始化的句柄
- * @return ESP_OK or ESP_FAIL
-*/
 esp_err_t ws2812_deinit(ws2812_strip_handle_t handle);
-
-/** 向某个WS2812写入RGB数据
- * @param handle 句柄
- * @param index 第几个WS2812（0开始）
- * @param r,g,b RGB数据
- * @return ESP_OK or ESP_FAIL
-*/
 esp_err_t ws2812_write(ws2812_strip_handle_t handle,uint32_t index,uint32_t r,uint32_t g,uint32_t b);
-
-
 esp_err_t ws2812_fade(ws2812_strip_handle_t handle, uint32_t start_index, uint32_t end_index, uint32_t start_r, uint32_t start_g, uint32_t start_b, uint32_t end_r, uint32_t end_g, uint32_t end_b, uint32_t steps, uint32_t delay_ms);
-
-
 void lightbegin(uint8_t mode);
+void lightreset();
+void lightadd(uint8_t num, uint8_t r, uint8_t g, uint8_t b);
+
+
 
 #ifdef __cplusplus
 }

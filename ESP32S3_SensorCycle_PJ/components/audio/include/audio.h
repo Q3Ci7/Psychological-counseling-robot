@@ -12,7 +12,7 @@
 // static TaskHandle_t check_playback_task_handle = NULL;
 // static SemaphoreHandle_t control_semaphore;
 extern volatile bool task_control_flag;//任务控制变量
-
+extern volatile bool end_flag;//任务控制变量
 
 
 

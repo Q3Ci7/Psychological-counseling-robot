@@ -295,3 +295,88 @@ esp_err_t ws2812_fade(ws2812_strip_handle_t handle, uint32_t start_index, uint32
 }
 
 
+/** 灯光初始化*/
+void lightbegin(uint8_t mode)
+{
+    uint8_t i;
+    switch (mode)
+    {
+    case 1: // 单色 渐变 点亮熄灭3次
+        for (i = 1; i < 4; i++)
+        {
+            for (i = 1; i < 4; i++)
+            {
+                ws2812_fade(ws2812_handle, 0, 11, 0, 0, 0, 50, 0, 0, 200, 50); // 使用200步
+                vTaskDelay(pdMS_TO_TICKS(500));
+                ws2812_fade(ws2812_handle, 0, 11, 50, 0, 0, 0, 0, 0, 200, 50); // 使用200步
+                vTaskDelay(pdMS_TO_TICKS(500));
+            }
+        }
+        break;
+    case 2: // 单色 循环依次点亮 再全部灭亮3次
+        for (i = 0; i < 12; i++)
+        {
+            ws2812_write(ws2812_handle, i, 10, 10, 10);
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+        for (uint8_t j = 0; j < 3; j++)
+        {
+            for (i = 0; i < 12; i++)
+            {
+                ws2812_write(ws2812_handle, i, 0, 0, 0);
+            }
+            vTaskDelay(pdMS_TO_TICKS(500));
+            for (i = 0; i < 12; i++)
+            {
+                ws2812_write(ws2812_handle, i, 10, 10, 10);
+            }
+            vTaskDelay(pdMS_TO_TICKS(500));
+        }
+        break;
+    default: // 全部熄灭
+        for (i = 1; i < 12; i++)
+        {
+            ws2812_write(ws2812_handle, i, 0, 0, 0);
+        }
+        break;
+    }
+}
+
+
+/** 灯光全熄*/
+void lightreset()
+{
+    for (uint8_t i = 0; i < 12; i++)
+    {
+        ws2812_write(ws2812_handle, i, 0, 0, 0);
+    }
+}
+
+
+/** 多个灯珠设置同一颜色
+ * @param num 灯珠数量
+ * @param r,g,b rgb值
+*/
+void lightadd(uint8_t num, uint8_t r, uint8_t g, uint8_t b)
+{
+    for (uint8_t i = 0; i < num; i++)
+    {
+        ws2812_write(ws2812_handle, i, r, g, b);
+    }
+}
+
+
+/** 灯珠颜色渐变
+ * @param start_index 起始灯珠位置
+ * @param end_index 结束灯珠位置
+ * @param s_r,s_g,s_b 起始灯珠颜色
+ * @param e_r,e_g,e_b 结束灯珠颜色
+*/
+
+// void light_color_gradient(uint8_t start_index,uint8_t end_index,uint8_t s_r,)
+// {
+//     for(uint8_t i = )
+//     {
+
+//     }
+// }

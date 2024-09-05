@@ -184,9 +184,17 @@ void checkplystation(void *pvParameter)
                 {
                     // A_flag = 0;
                     task_control_flag = false;
+                    // ESP_LOGI("ply_statu", "0");
+                    if (end_flag)
+                    {
+                        uart_write_bytes(UART_NUM_2, "selfend", strlen("selfend"));
+                    }
+                    else
+                    {
+                        uart_write_bytes(UART_NUM_2, "playend", strlen("playend"));
+                    }
+
                     ESP_LOGI("ply_statu", "0");
-                    uart_write_bytes(UART_NUM_2, "playend", strlen("playend"));
-                    ESP_LOGI("ply_statu", "Suspending task");
                 }
                 else
                 {
