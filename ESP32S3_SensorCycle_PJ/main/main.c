@@ -39,21 +39,14 @@
 #include "common.h"
 #include "audio.h"
 #include "ws2812b.h"
-// #include "gsr.h"
-// #include "gpio_ctrl.h"
-// #include "bpm.h"
 #include "uart.h"
 #include "servo.h"
-// #include "emotion.h"
-// #include "microphone.h"
 #include "HCSR.h"
 
 /************Audio Setting************/
-
-const uint8_t music_volume = 5;
-const uint8_t voice_volume = 5;
+const uint8_t music_volume = 20;
+const uint8_t voice_volume = 30;
 const uint8_t duration = 2;
-
 /***********************************/
 
 /************WS2812 Setting************/
@@ -61,14 +54,12 @@ uint8_t num = 0; // light mode choose
 ws2812_strip_handle_t ws2812_handle = NULL;
 int idx = 0;         //
 uint8_t lednum = 12; // Number of WS2812B_LED
-
 /***********************************/
-
 // QueueHandle_t data_queue1; // Create queue handle
 QueueHandle_t data_queue2; // Create queue handle
 QueueHandle_t data_queue3; // Create queue handle
-static TaskHandle_t check_task_handle = NULL;
-volatile bool task_control_flag = false;
+static TaskHandle_t check_task_handle = NULL; //check play station task handle
+volatile bool task_control_flag = false;    //check play station task contol flag
 
 void lightbegin(uint8_t mode)
 {
@@ -179,195 +170,201 @@ void lightmode_task(void *pvParameters)
         case 1:
             lightreset();
             //                             r  g  b
-            ws2812_write(ws2812_handle, 0, 0, 2, 0); // g
+            ws2812_write(ws2812_handle, 0, 24, 16, 0); // warm
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 1, 0, 4, 0);
+            ws2812_write(ws2812_handle, 1, 24, 15, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 2, 0, 6, 0); //
+            ws2812_write(ws2812_handle, 2, 24, 14, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 3, 0, 8, 0);
+            ws2812_write(ws2812_handle, 3, 24, 13, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 4, 0, 10, 0); //
+            ws2812_write(ws2812_handle, 4, 24, 12, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 5, 0, 12, 0);
+            ws2812_write(ws2812_handle, 5, 24, 11, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 6, 0, 14, 0); //
+            ws2812_write(ws2812_handle, 6, 24, 10, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 7, 0, 16, 0);
+            ws2812_write(ws2812_handle, 7, 24, 9, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 8, 0, 18, 0); //
+            ws2812_write(ws2812_handle, 8, 24, 8, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 9, 0, 20, 0);
+            ws2812_write(ws2812_handle, 9, 24, 7, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 10, 0, 22, 0); //
+            ws2812_write(ws2812_handle, 10, 24, 6, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 11, 0, 24, 0); //
+            ws2812_write(ws2812_handle, 11, 24, 5, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             break;
         case 2:
             lightreset();
-            ws2812_write(ws2812_handle, 0, 20, 20, 0); // y
+            ws2812_write(ws2812_handle, 0, 24, 24, 0); // happy
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 1, 19, 20, 0);
+            ws2812_write(ws2812_handle, 1, 24, 22, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 2, 18, 20, 0); //
+            ws2812_write(ws2812_handle, 2, 24, 20, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 3, 16, 20, 0);
+            ws2812_write(ws2812_handle, 3, 24, 18, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 4, 14, 20, 0); //
+            ws2812_write(ws2812_handle, 4, 24, 16, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 5, 12, 20, 0);
+            ws2812_write(ws2812_handle, 5, 24, 14, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 6, 10, 20, 0); //
+            ws2812_write(ws2812_handle, 6, 24, 12, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 7, 8, 20, 0);
+            ws2812_write(ws2812_handle, 7, 24, 10, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 8, 6, 20, 0); //
+            ws2812_write(ws2812_handle, 8, 24, 8, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 9, 4, 20, 0);
+            ws2812_write(ws2812_handle, 9, 24, 7, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 10, 2, 20, 0); //
+            ws2812_write(ws2812_handle, 10, 24, 6, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 11, 0, 20, 0); //
+            ws2812_write(ws2812_handle, 11, 24, 5, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             break;
         case 3:
             lightreset();
-            ws2812_write(ws2812_handle, 0, 25, 2, 0); // o
+            ws2812_write(ws2812_handle, 0, 0, 24, 0); // calm
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 1, 22, 4, 0);
+            ws2812_write(ws2812_handle, 1, 4, 24, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 2, 20, 6, 0); //
+            ws2812_write(ws2812_handle, 2, 8, 24, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 3, 18, 8, 0);
+            ws2812_write(ws2812_handle, 3, 12, 24, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 4, 16, 10, 0); //
+            ws2812_write(ws2812_handle, 4, 16, 24, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 5, 14, 12, 0);
+            ws2812_write(ws2812_handle, 5, 24, 24, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 6, 12, 14, 0); //
+            ws2812_write(ws2812_handle, 6, 24, 20, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 7, 10, 16, 0);
+            ws2812_write(ws2812_handle, 7, 24, 16, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 8, 8, 18, 0); //
+            ws2812_write(ws2812_handle, 8, 24, 12, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 9, 6, 20, 0);
+            ws2812_write(ws2812_handle, 9, 24, 8, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 10, 4, 22, 0); //
+            ws2812_write(ws2812_handle, 10, 24, 6, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 11, 0, 24, 0); //
+            ws2812_write(ws2812_handle, 11, 24, 5, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             break;
         case 4:
             lightreset();
-            ws2812_write(ws2812_handle, 0, 25, 0, 0); // r
+            ws2812_write(ws2812_handle, 0, 0, 24, 24); // sad
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 1, 22, 4, 0);
+            ws2812_write(ws2812_handle, 1, 0, 24, 18);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 2, 20, 6, 0); //
+            ws2812_write(ws2812_handle, 2, 0, 24, 12); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 3, 18, 8, 0);
+            ws2812_write(ws2812_handle, 3, 0, 24, 6);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 4, 16, 10, 0); //
+            ws2812_write(ws2812_handle, 4, 0, 24, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 5, 14, 12, 0);
+            ws2812_write(ws2812_handle, 5, 6, 24, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 6, 12, 14, 0); //
+            ws2812_write(ws2812_handle, 6, 12, 24, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 7, 10, 16, 0);
+            ws2812_write(ws2812_handle, 7, 18, 24, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 8, 8, 18, 0); //
+            ws2812_write(ws2812_handle, 8, 24, 24, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 9, 6, 20, 0);
+            ws2812_write(ws2812_handle, 9, 24, 18, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 10, 4, 22, 0); //
+            ws2812_write(ws2812_handle, 10, 24, 12, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 11, 0, 24, 0); //
+            ws2812_write(ws2812_handle, 11, 24, 5, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             break;
         case 5:
             lightreset();
-            ws2812_write(ws2812_handle, 0, 24, 0, 24); // p
+            ws2812_write(ws2812_handle, 0, 0, 0, 24); // afraid
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 1, 22, 2, 22);
+            ws2812_write(ws2812_handle, 1, 0, 8, 24);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 2, 20, 4, 20); //
+            ws2812_write(ws2812_handle, 2, 0, 16, 24); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 3, 18, 6, 18);
+            ws2812_write(ws2812_handle, 3, 0, 24, 24);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 4, 16, 8, 16); //
+            ws2812_write(ws2812_handle, 4, 0, 24, 16); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 5, 14, 10, 15);
+            ws2812_write(ws2812_handle, 5, 0, 24, 8);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 6, 12, 12, 14); //
+            ws2812_write(ws2812_handle, 6, 0, 24, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 7, 10, 14, 8);
+            ws2812_write(ws2812_handle, 7, 8, 24, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 8, 8, 16, 6); //
+            ws2812_write(ws2812_handle, 8, 16, 24, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 9, 6, 18, 4);
+            ws2812_write(ws2812_handle, 9, 24, 24, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 10, 4, 20, 2); //
+            ws2812_write(ws2812_handle, 10, 24, 18, 2); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 11, 0, 22, 0); //
+            ws2812_write(ws2812_handle, 11, 24, 5, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             break;
         case 6:
             lightreset();
-            ws2812_write(ws2812_handle, 0, 0, 0, 24); // db
+            ws2812_write(ws2812_handle, 0, 12, 0, 24); // scared p
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 1, 0, 2, 22);
+            ws2812_write(ws2812_handle, 1, 6, 0, 24);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 2, 0, 4, 20); //
+            ws2812_write(ws2812_handle, 2, 0, 0, 24); // db
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 3, 0, 6, 18);
+            ws2812_write(ws2812_handle, 3, 0, 12, 24);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 4, 0, 8, 16); //
+            ws2812_write(ws2812_handle, 4, 0, 24, 24); // lb
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 5, 0, 10, 14);
+            ws2812_write(ws2812_handle, 5, 8, 24, 16);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 6, 0, 12, 12); //
+            ws2812_write(ws2812_handle, 6, 16, 24, 8);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 7, 0, 14, 10);
+            ws2812_write(ws2812_handle, 7, 24, 24, 0); // y
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 8, 0, 16, 8); //
+            ws2812_write(ws2812_handle, 8, 12, 24, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 9, 0, 18, 6);
+            ws2812_write(ws2812_handle, 9, 0, 24, 0); // g
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 10, 0, 20, 4); //
+            ws2812_write(ws2812_handle, 10, 24, 12, 0); //
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 11, 0, 22, 0); //
+            ws2812_write(ws2812_handle, 11, 24, 5, 0); // o
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             break;
         case 7:
             lightreset();
-            ws2812_write(ws2812_handle, 0, 10, 10, 20); //
+            ws2812_write(ws2812_handle, 0, 24, 0, 0); // anger  r
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 1, 0, 0, 20); // db
+            ws2812_write(ws2812_handle, 1, 18, 0, 12);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 2, 10, 0, 20);
+            ws2812_write(ws2812_handle, 2, 12, 0, 24); // p
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 3, 20, 0, 20); // p
+            ws2812_write(ws2812_handle, 3, 6, 0, 24);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 4, 20, 0, 10);
+            ws2812_write(ws2812_handle, 4, 0, 0, 24); // db
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 5, 20, 0, 0); // r
+            ws2812_write(ws2812_handle, 5, 0, 12, 24);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 6, 20, 5, 0);
+            ws2812_write(ws2812_handle, 6, 0, 24, 24); // lb
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 7, 20, 10, 0); // o
+            ws2812_write(ws2812_handle, 7, 0, 24, 12);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 8, 20, 15, 0);
+            ws2812_write(ws2812_handle, 8, 0, 24, 0); // g
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 9, 20, 20, 0); // y
+            ws2812_write(ws2812_handle, 9, 12, 24, 0);
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 10, 10, 20, 0);
+            ws2812_write(ws2812_handle, 10, 24, 24, 0); // y
             vTaskDelay(pdMS_TO_TICKS(delaytime));
-            ws2812_write(ws2812_handle, 11, 0, 20, 0); // g
+            ws2812_write(ws2812_handle, 11, 24, 5, 0); // o
             vTaskDelay(pdMS_TO_TICKS(delaytime));
             break;
         case 8:
             lightreset();
+            break;
+        case 9:
+            for (uint8_t i = 0; i < 12; i++)
+            {
+                ws2812_write(ws2812_handle, i, 10, 10, 10);
+            }
             break;
         default:
 
@@ -486,7 +483,7 @@ void shake()
 
             set_servo_angle(2, angle);      // 手部舵机
             set_servo_angle(1, 30 - angle); // 头部舵机
-            vTaskDelay(pdMS_TO_TICKS(50));   // 5ms延时
+            vTaskDelay(pdMS_TO_TICKS(50));  // 5ms延时
         }
         else
         {
@@ -590,12 +587,20 @@ void psychic_run_task(void *pvParameters)
                 ESP_LOGI("msgtype", "%d", msg.msgtype);
                 break;
             case 14:
-                num = 8;
+                num = 9;
                 // suspend_check_task(); // 挂起
                 task_control_flag = false;
                 vTaskDelay(pdMS_TO_TICKS(1000));
                 A_stop();
                 ESP_LOGI("msgtype", "14");
+                break;
+            case 15:
+                num = 9;
+                // suspend_check_task(); // 挂起
+                task_control_flag = false;
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                A_stop();
+                ESP_LOGI("msgtype", "15");
                 break;
             default:
                 // num = 0;
@@ -617,6 +622,7 @@ void sys_init()
     servo_init(2, 42);
     ultrasonic_init(); // ultrasonic initialization
     // A_stop();
+    set_servo_angle(0, 60);
     lightbegin(2);
 }
 

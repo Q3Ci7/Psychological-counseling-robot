@@ -40,6 +40,9 @@ esp_err_t ws2812_write(ws2812_strip_handle_t handle,uint32_t index,uint32_t r,ui
 
 esp_err_t ws2812_fade(ws2812_strip_handle_t handle, uint32_t start_index, uint32_t end_index, uint32_t start_r, uint32_t start_g, uint32_t start_b, uint32_t end_r, uint32_t end_g, uint32_t end_b, uint32_t steps, uint32_t delay_ms);
 
+
+void lightbegin(uint8_t mode);
+
 #ifdef __cplusplus
 }
 #endif
