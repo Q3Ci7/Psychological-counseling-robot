@@ -49,7 +49,8 @@
         "adc.h": "c",
         "adc_continuous.h": "c",
         "emotion.h": "c",
-        "hcsr.h": "c"
+        "hcsr.h": "c",
+        "iterator": "c"
     },
     "idf.openOcdConfigs": [
         "board/esp32s3-builtin.cfg"

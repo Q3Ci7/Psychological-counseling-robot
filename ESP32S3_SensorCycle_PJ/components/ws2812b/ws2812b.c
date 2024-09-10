@@ -207,6 +207,7 @@ esp_err_t ws2812_init(gpio_num_t gpio,int maxled,ws2812_strip_handle_t* handle)
     return ESP_OK;
 }
 
+
 /** 反初始化WS2812外设
  * @param handle 初始化的句柄
  * @return ESP_OK or ESP_FAIL
@@ -222,6 +223,8 @@ esp_err_t ws2812_deinit(ws2812_strip_handle_t handle)
     return ESP_OK;
 }
 
+
+#if INPUT_FLAG
 /** 向某个WS2812写入RGB数据
  * @param handle 句柄
  * @param index 第几个WS2812（0开始）
@@ -230,8 +233,8 @@ esp_err_t ws2812_deinit(ws2812_strip_handle_t handle)
 */
 esp_err_t ws2812_write(ws2812_strip_handle_t handle,uint32_t index,uint32_t r,uint32_t g,uint32_t b)
 {
-     rmt_transmit_config_t tx_config = {
-        .loop_count = 0, //不循环发送
+     rmt_transmit_config_t tx_config = { // 定义了 RMT（Remote Control Module）发送配置
+        .loop_count = 0, //表示发送的信号不会循环，这里是一次性发送信号给 WS2812
     };
     if(index >= handle->led_num)
         return ESP_FAIL;
@@ -244,6 +247,39 @@ esp_err_t ws2812_write(ws2812_strip_handle_t handle,uint32_t index,uint32_t r,ui
     
 }
 
+
+#else 
+/** 向某个WS2812写入RGB数据
+ * @param handle 句柄
+ * @param index 第几个WS2812（0开始）
+ * @param r,g,b RGB数据
+ * @return ESP_OK or ESP_FAIL
+*/
+esp_err_t ws2812_write(ws2812_strip_handle_t handle, uint32_t index, uint32_t hex_color)
+{
+    rmt_transmit_config_t tx_config = {
+        .loop_count = 0, // 不循环发送
+    };
+    
+    if (index >= handle->led_num)
+        return ESP_FAIL;
+
+    uint32_t start = index * 3;
+    
+    // 从 hex_color 中提取 RGB 值
+    uint8_t r = (hex_color >> 16) & 0xff; // 提取红色部分
+    uint8_t g = (hex_color >> 8) & 0xff;  // 提取绿色部分
+    uint8_t b = hex_color & 0xff;         // 提取蓝色部分
+
+    // WS2812 的数据顺序是 GRB
+    handle->led_buffer[start + 0] = g;
+    handle->led_buffer[start + 1] = r;
+    handle->led_buffer[start + 2] = b;
+
+    return rmt_transmit(handle->led_chan, handle->led_encoder, handle->led_buffer, handle->led_num * 3, &tx_config);
+}
+
+#endif
 
 /** 向某个WS2812写入RGB数据
  * @param handle 句柄
@@ -373,10 +409,10 @@ void lightadd(uint8_t num, uint8_t r, uint8_t g, uint8_t b)
  * @param e_r,e_g,e_b 结束灯珠颜色
 */
 
-// void light_color_gradient(uint8_t start_index,uint8_t end_index,uint8_t s_r,)
+// void light_color_gradient(uint8_t start_index,uint8_t end_index,uint8_t s_r,uint8_t s_g,uint8_t s_b,)
 // {
-//     for(uint8_t i = )
-//     {
-
-//     }
+//     // for(uint8_t i = )
+//     // {
+        
+//     // }
 // }

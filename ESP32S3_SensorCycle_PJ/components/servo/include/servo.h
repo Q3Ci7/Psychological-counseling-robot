@@ -14,11 +14,21 @@
 // 定义最多支持的舵机数量
 #define MAX_SERVOS 8
 
+
+#define smooth_flag  0//可选 起始位置-目标位置/直接到目标位置
+
 // 初始化单个舵机
 void servo_init(int channel, int gpio_num);
 
 // 设置舵机角度
+
 void set_servo_angle(int channel, int angle);
+
+#if smooth_flag
+esp_err_t servo_smooth_move(int pwm_channel,double start_angle,double target_angle, double duration);
+#else
+esp_err_t servo_smooth_move(int pwm_channel, double target_angle, double duration);
+#endif
 
 
 #endif

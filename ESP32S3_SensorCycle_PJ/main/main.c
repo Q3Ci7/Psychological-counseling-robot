@@ -22,7 +22,7 @@
 
 /************Audio Setting**********/
 const uint8_t music_volume = 20;
-const uint8_t voice_volume = 30;
+const uint8_t voice_volume = 25;
 const uint8_t duration = 2;
 
 /************WS2812 Setting************/
@@ -32,8 +32,10 @@ int idx = 0;         //
 uint8_t lednum = 12; // Number of WS2812B_LED
 
 // QueueHandle_t data_queue1; // Create queue handle
-QueueHandle_t data_queue2;                    // Create queue handle
-QueueHandle_t data_queue3;                    // Create queue handle
+QueueHandle_t data_queue2;   // Create queue handle
+QueueHandle_t data_queue3;   // Create queue handle
+QueueHandle_t distanceQueue; // Create distance queue handle
+
 static TaskHandle_t check_task_handle = NULL; // check play station task handle
 volatile bool task_control_flag = false;      // check play station task contol flag
 volatile bool end_flag = true;                // check play station task contol flag
@@ -255,6 +257,7 @@ void lightmode_task(void *pvParameters)
     }
 }
 
+#if 0 // 使用的是set_servo_angle函数
 void shake()
 {
     uint8_t count1 = 0;
@@ -273,8 +276,8 @@ void shake()
         {
             uint8_t angle = flip_flag ? count1 : (30 - count1);
 
-            set_servo_angle(2, angle);      // 手部舵机
-            set_servo_angle(1, 30 - angle); // 头部舵机
+            set_servo_angle(2, angle);      
+            set_servo_angle(1, 30 - angle); 
             vTaskDelay(pdMS_TO_TICKS(50));  // 5ms延时
         }
         else
@@ -306,6 +309,97 @@ void shake()
     // 将头部舵机转到最佳角度
     set_servo_angle(0, best_angle);
 }
+
+#elif 0 // 使用的是servo_smooth_move函数
+void shake()
+{
+    uint8_t count1 = 0;
+    bool flip_flag = false;
+    float distance;
+    float best_distance = FLT_MAX; // 初始化为最大值
+    uint8_t best_angle = 0;        // 存储最佳角度
+    double step = 0.05;            // 每个插值点的时间间隔
+    double current_time = 0;
+    double target_angle = 100;
+    servo_smooth_move(0, 100, 0, 2);
+    while (current_time <= 4.5)
+    {
+        double angle = 0 + ((target_angle - 0) * (current_time / 4.5));
+        set_servo_angle(0, angle);
+        count1++;
+
+        distance = ultrasonic_get_distance(); // 获取当前角度的距离
+        // printf("distance:%.2fcm\n", distance);
+        if (distance >= 0 && distance < best_distance) // 记录最小距离及其对应的角度
+        {
+            best_distance = distance;
+            best_angle = angle;
+        }
+
+        if (count1 <= 30)
+        {
+            uint8_t arm_angle = flip_flag ? count1 : (30 - count1);
+            set_servo_angle(2, arm_angle);
+            set_servo_angle(1, 30 - arm_angle);
+        }
+        else
+        {
+            count1 = 0;
+            flip_flag = !flip_flag; // 翻转标志位
+        }
+        vTaskDelay(pdMS_TO_TICKS(70));
+        current_time += step;
+    }
+
+    // 将头部舵机转到最佳角度
+    // set_servo_angle(0, best_angle);
+    servo_smooth_move(0, 100, best_angle, 2);
+}
+
+#elif 1 // 使用servo_smooth_move函数+距离获取任务，同时需要将smooth_flag改为1
+void shake()
+{
+    float hcsrdata;                // 声明hcsrmsg结构体变量
+    uint8_t count1 = 0;            // 手臂舵机计数
+    bool flip_flag = false;        // 手臂舵机反转标志位
+    float best_distance = FLT_MAX; // 初始化为最大值
+    uint8_t best_angle = 0;        // 存储最佳角度
+    double step = 0.05;            // 每个插值点的时间间隔
+    double current_time = 0;       // 当前时间
+    double target_angle = 100;     // 目标位置
+    servo_smooth_move(0, 0, 1);    // 转动回0位
+    while (current_time <= 6)      // 当前时间小于6
+    {
+        double angle = 0 + ((target_angle - 0) * (current_time / 6));
+        set_servo_angle(0, angle);
+        count1++;
+        if (xQueueReceive(distanceQueue, &hcsrdata, 0) == pdPASS)
+        { // 判断接收来自距离检测任务的数据
+            if (hcsrdata >= 0 && hcsrdata < best_distance) 
+            {//如果检测到的距离在正确范围内
+                best_distance = hcsrdata;      //赋值给最优距离
+                best_angle = angle;            //赋值给最优角度
+            }
+        }
+        if (count1 <= 30)       
+        {//时间小于30
+            uint8_t arm_angle = flip_flag ? count1 : (30 - count1);
+            // set_servo_angle(2, arm_angle);
+            // set_servo_angle(1, 30 - arm_angle);
+            servo_smooth_move(2,arm_angle,1);           //使用舵机平滑处理函数
+            servo_smooth_move(2,30 - arm_angle,1);      //使用舵机平滑处理函数
+        }
+        else                   
+        {//时间到达30反转标志位
+            count1 = 0;        //从0计数
+            flip_flag = !flip_flag;
+        }
+        vTaskDelay(pdMS_TO_TICKS(70));
+        current_time += step; //步进累加
+    }
+    servo_smooth_move(0, best_angle, 1);// 将头部舵机转到最佳角度
+}
+#endif
 
 //*******************************suspend resume task*********************************** */
 void resume_check_task()
@@ -354,8 +448,8 @@ void psychic_run_task(void *pvParameters)
                 Audio_init(2, voice_volume);
                 A_choose(1);
                 shake();
-                end_flag = true; // 语音结束，发送数据切换标志位，切换到发送“selfend”
-                task_control_flag = true;//开启语音播报状态检测任务
+                end_flag = true;
+                task_control_flag = true;
                 ESP_LOGI("msgtype", "1");
                 break;
             case 2:
@@ -363,31 +457,31 @@ void psychic_run_task(void *pvParameters)
                 A_choose(2);
                 ESP_LOGI("msgtype", "2");
                 break;
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+            case 9:
             case 10:
             case 11:
             case 12:
             case 13:
-                num = 8;//灯光全灭状态
-                Audio_init(2, music_volume);
-                A_choose(msg.msgtype - 7);
-                vTaskDelay(pdMS_TO_TICKS(1000));
-                end_flag = false; // 语音结束，发送数据切换标志位，切换到发送“playend”
-                task_control_flag = true;//开启语音播报状态检测任务
-                ESP_LOGI("msgtype", "%d", msg.msgtype);
-                break;
             case 14:
-                num = 9;//灯光全亮状态
-                task_control_flag = false;
+                num = 8; // 灯光全灭状态
+                Audio_init(2, music_volume);
+                A_choose(msg.msgtype - 2);
                 vTaskDelay(pdMS_TO_TICKS(1000));
-                A_stop();
-                ESP_LOGI("msgtype", "14");
+                end_flag = false;
+                task_control_flag = true;
                 break;
             case 15:
-                num = 9;//灯光全亮状态
+            case 16:
+                num = 9; // 灯光全亮状态
                 task_control_flag = false;
                 vTaskDelay(pdMS_TO_TICKS(1000));
                 A_stop();
-                // ESP_LOGI("msgtype", "15");
                 break;
             default:
                 break;
@@ -406,7 +500,7 @@ void sys_init()
     servo_init(2, 42);                      // servo 2 initialization
     ultrasonic_init();                      // ultrasonic initialization
     // A_stop();
-    set_servo_angle(0, 60); // Initialize the header Angle
+    set_servo_angle(0, 52); // Initialize the header Angle
     lightbegin(2);
 }
 
@@ -416,25 +510,21 @@ void app_main()
     /**************CREATE QUEUE**************/
     data_queue2 = xQueueCreate(10, sizeof(Message));
     data_queue3 = xQueueCreate(10, sizeof(EMO));
-    if (data_queue2 == NULL || data_queue3 == NULL)
+    distanceQueue = xQueueCreate(10, sizeof(float));
+    if (data_queue2 == NULL || data_queue3 == NULL || distanceQueue == NULL)
     {
         ESP_LOGE("Queue", "Queue creation failed!");
         return;
     }
 
-    /**************Create a control semaphore**************/
-    // control_semaphore = xSemaphoreCreateBinary();
-    // if (control_semaphore == NULL)
-    // {
-    //     ESP_LOGE("app_main", "Failed to create semaphore");
-    //     return;
-    // }
+
 
     /**************CREATE TASK**************/
-    xTaskCreate(lightmode_task, "lightmode_task", 4096, NULL, 5, NULL);
+    xTaskCreate(lightmode_task, "lightmode_task", 4096, NULL, 5, NULL);        
     xTaskCreate(rx_uart_task, "rx_uart_task", 4096, NULL, 5, NULL);
     xTaskCreate(psychic_run_task, "psychic_run_task", 4096, NULL, 5, NULL);
     xTaskCreate(checkplystation, "checkplystation", 4096, NULL, 5, &check_task_handle);
+    xTaskCreate(Get_Distance_task, "Get_Distance_task", 4096, NULL, 5, NULL);
 
     while (1)
     {
