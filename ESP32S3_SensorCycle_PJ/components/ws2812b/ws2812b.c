@@ -1,0 +1,447 @@
+#include "esp_check.h"
+#include "ws2812b.h"
+#include "driver/rmt_tx.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+static const char *TAG = "led_encoder";
+
+#define LED_STRIP_RESOLUTION_HZ 10000000 // 10MHz 分辨率, 也就是1tick = 0.1us，也就是可以控制的最小时间单元，低于0.1us的脉冲无法产生
+
+//WS2812驱动的描述符
+struct ws2812_strip_t
+{
+    rmt_channel_handle_t led_chan;          //rmt通道
+    rmt_encoder_handle_t led_encoder;       //rmt编码器
+    uint8_t *led_buffer;                    //rgb数据
+    int led_num;                            //led个数
+};
+
+//自定义编码器
+typedef struct {
+    rmt_encoder_t base;                     //编码器，里面包含三个需要用户实现的回调函数，encode,del,ret
+    rmt_encoder_t *bytes_encoder;           //字节编码器，调用rmt_new_bytes_encoder函数后创建
+    rmt_encoder_t *copy_encoder;            //拷贝编码器，调用rmt_new_copy_encoder函数后创建
+    int state;                              //状态控制
+    rmt_symbol_word_t reset_code;           //结束位的时序
+} rmt_led_strip_encoder_t;
+
+/* 发送WS2812数据的函数调用顺序如下
+ * 1、调用rmt_transmit，需传入RMT通道、发送的数据、编码器参数
+ * 2、调用编码器的encode函数，在本例程中就是调用rmt_encode_led_strip函数
+ * 3、调用由rmt_new_bytes_encoder创建的字节编码器编码函数bytes_encoder->encode，将用户数据编码成rmt_symbol_word_t RMT符号
+ * 4、调用由rmt_new_copy_encoder创建的拷贝编码器编码函数copy_encoder->encode，将复位信号安装既定的电平时间进行编码
+ * 5、rmt_encode_led_strip函数返回，在底层将信号发送出去（本质上是操作IO管脚高低电平）
+*/
+
+/** 编码回调函数
+ * @param encoder 编码器
+ * @param channel RMT通道
+ * @param primary_data 待编码用户数据
+ * @param data_size 待编码用户数据长度
+ * @param ret_state 编码状态
+ * @return RMT符号个数
+*/
+static size_t rmt_encode_led_strip(rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
+{
+    /*
+    __containerof宏的作用:
+    通过结构的成员来访问这个结构的地址
+    在这个函数中，传入参数encoder是rmt_led_strip_encoder_t结构体中的base成员
+    __containerof宏通过encoder的地址，根据rmt_led_strip_encoder_t的内存排布找到rmt_led_strip_encoder_t* 的首地址
+    */
+    rmt_led_strip_encoder_t *led_encoder = __containerof(encoder, rmt_led_strip_encoder_t, base);
+    rmt_encoder_handle_t bytes_encoder = led_encoder->bytes_encoder;        //取出字节编码器
+    rmt_encoder_handle_t copy_encoder = led_encoder->copy_encoder;          //取出拷贝编码器
+    rmt_encode_state_t session_state = RMT_ENCODING_RESET;
+    rmt_encode_state_t state = RMT_ENCODING_RESET;
+    size_t encoded_symbols = 0;
+    switch (led_encoder->state) {   //led_encoder->state是自定义的状态，这里只有两种值，0是发送RGB数据，1是发送复位码
+    case 0: // send RGB data
+        encoded_symbols += bytes_encoder->encode(bytes_encoder, channel, primary_data, data_size, &session_state);
+        if (session_state & RMT_ENCODING_COMPLETE) {    //字节编码完成
+            led_encoder->state = 1; // switch to next state when current encoding session finished
+        }
+        if (session_state & RMT_ENCODING_MEM_FULL) {    //缓存不足，本次退出
+            state |= RMT_ENCODING_MEM_FULL;
+            goto out; // yield if there's no free space for encoding artifacts
+        }
+    // fall-through
+    case 1: // send reset code
+        encoded_symbols += copy_encoder->encode(copy_encoder, channel, &led_encoder->reset_code,
+                                                sizeof(led_encoder->reset_code), &session_state);
+        if (session_state & RMT_ENCODING_COMPLETE) {
+            led_encoder->state = RMT_ENCODING_RESET; // back to the initial encoding session
+            state |= RMT_ENCODING_COMPLETE;
+        }
+        if (session_state & RMT_ENCODING_MEM_FULL) {
+            state |= RMT_ENCODING_MEM_FULL;
+            goto out; // yield if there's no free space for encoding artifacts
+        }
+    }
+out:
+    *ret_state = state;
+    return encoded_symbols;
+}
+
+static esp_err_t rmt_del_led_strip_encoder(rmt_encoder_t *encoder)
+{
+    rmt_led_strip_encoder_t *led_encoder = __containerof(encoder, rmt_led_strip_encoder_t, base);
+    rmt_del_encoder(led_encoder->bytes_encoder);
+    rmt_del_encoder(led_encoder->copy_encoder);
+    free(led_encoder);
+    return ESP_OK;
+}
+
+static esp_err_t rmt_led_strip_encoder_reset(rmt_encoder_t *encoder)
+{
+    rmt_led_strip_encoder_t *led_encoder = __containerof(encoder, rmt_led_strip_encoder_t, base);
+    rmt_encoder_reset(led_encoder->bytes_encoder);
+    rmt_encoder_reset(led_encoder->copy_encoder);
+    led_encoder->state = RMT_ENCODING_RESET;
+    return ESP_OK;
+}
+
+/** 创建一个基于WS2812时序的编码器
+ * @param ret_encoder 返回的编码器，这个编码器在使用rmt_transmit函数传输时会用到
+ * @return ESP_OK or ESP_FAIL
+*/
+esp_err_t rmt_new_led_strip_encoder(rmt_encoder_handle_t *ret_encoder)
+{
+    esp_err_t ret = ESP_OK;
+
+    //创建一个自定义的编码器结构体，用于控制发送编码的流程
+    rmt_led_strip_encoder_t *led_encoder = NULL;
+    led_encoder = calloc(1, sizeof(rmt_led_strip_encoder_t));
+    ESP_GOTO_ON_FALSE(led_encoder, ESP_ERR_NO_MEM, err, TAG, "no mem for led strip encoder");
+    led_encoder->base.encode = rmt_encode_led_strip;    //这个函数会在rmt发送数据的时候被调用，我们可以在这个函数增加额外代码进行控制
+    led_encoder->base.del = rmt_del_led_strip_encoder;  //这个函数在卸载rmt时被调用
+    led_encoder->base.reset = rmt_led_strip_encoder_reset;  //这个函数在复位rmt时被调用
+
+    //新建一个编码器配置(0,1位持续时间，参考芯片手册)
+    rmt_bytes_encoder_config_t bytes_encoder_config = {
+        .bit0 = {
+            .level0 = 1,
+            .duration0 = 0.3 * LED_STRIP_RESOLUTION_HZ / 1000000, // T0H=0.3us
+            .level1 = 0,
+            .duration1 = 0.9 * LED_STRIP_RESOLUTION_HZ / 1000000, // T0L=0.9us
+        },
+        .bit1 = {
+            .level0 = 1,
+            .duration0 = 0.9 * LED_STRIP_RESOLUTION_HZ / 1000000, // T1H=0.9us
+            .level1 = 0,
+            .duration1 = 0.3 * LED_STRIP_RESOLUTION_HZ / 1000000, // T1L=0.3us
+        },
+        .flags.msb_first = 1 //高位先传输
+    };
+    //传入编码器配置，获得数据编码器操作句柄
+    rmt_new_bytes_encoder(&bytes_encoder_config, &led_encoder->bytes_encoder);
+
+    //新建一个拷贝编码器配置，拷贝编码器一般用于传输恒定的字符数据，比如说结束位
+    rmt_copy_encoder_config_t copy_encoder_config = {};
+    rmt_new_copy_encoder(&copy_encoder_config, &led_encoder->copy_encoder);
+
+    //设定结束位时序
+    uint32_t reset_ticks = LED_STRIP_RESOLUTION_HZ / 1000000 * 50 / 2; //分辨率/1M=每个ticks所需的us，然后乘以50就得出50us所需的ticks
+    led_encoder->reset_code = (rmt_symbol_word_t) {
+        .level0 = 0,
+        .duration0 = reset_ticks,
+        .level1 = 0,
+        .duration1 = reset_ticks,
+    };
+
+    //返回编码器
+    *ret_encoder = &led_encoder->base;
+    return ESP_OK;
+err:
+    if (led_encoder) {
+        if (led_encoder->bytes_encoder) {
+            rmt_del_encoder(led_encoder->bytes_encoder);
+        }
+        if (led_encoder->copy_encoder) {
+            rmt_del_encoder(led_encoder->copy_encoder);
+        }
+        free(led_encoder);
+    }
+    return ret;
+}
+
+/** 初始化WS2812外设
+ * @param gpio 控制WS2812的管脚
+ * @param maxled 控制WS2812的个数
+ * @param led_handle 返回的控制句柄
+ * @return ESP_OK or ESP_FAIL
+*/
+esp_err_t ws2812_init(gpio_num_t gpio,int maxled,ws2812_strip_handle_t* handle)
+{
+    struct ws2812_strip_t* led_handle = NULL;
+    //新增一个WS2812驱动描述
+    led_handle = calloc(1, sizeof(struct ws2812_strip_t));
+    assert(led_handle);
+    //按照led个数来分配RGB缓存数据
+    led_handle->led_buffer = calloc(1,maxled*3);
+    assert(led_handle->led_buffer);
+    //设置LED个数
+    led_handle->led_num = maxled;
+
+    //定义一个RMT发送通道配置
+    rmt_tx_channel_config_t tx_chan_config = {
+        .clk_src = RMT_CLK_SRC_DEFAULT,         //默认时钟源
+        .gpio_num = gpio,                       //GPIO管脚
+        .mem_block_symbols = 64,                //内存块大小，即 64 * 4 = 256 字节
+        .resolution_hz = LED_STRIP_RESOLUTION_HZ,   //RMT通道的分辨率10000000hz=0.1us，也就是可以控制的最小时间单元
+        .trans_queue_depth = 4,                 //底层后台发送的队列深度
+    };
+
+    //创建一个RMT发送通道
+    ESP_ERROR_CHECK(rmt_new_tx_channel(&tx_chan_config, &led_handle->led_chan));
+
+    //创建自定义编码器（重点函数），所谓编码，就是发射红外时加入我们的时序控制
+    ESP_ERROR_CHECK(rmt_new_led_strip_encoder(&led_handle->led_encoder));
+
+    //使能RMT通道
+    ESP_ERROR_CHECK(rmt_enable(led_handle->led_chan));
+
+    //返回WS2812操作句柄
+    *handle = led_handle;
+
+    return ESP_OK;
+}
+
+
+/** 反初始化WS2812外设
+ * @param handle 初始化的句柄
+ * @return ESP_OK or ESP_FAIL
+*/
+esp_err_t ws2812_deinit(ws2812_strip_handle_t handle)
+{
+    if(!handle)
+        return ESP_OK;
+    rmt_del_encoder(handle->led_encoder);
+    if(handle->led_buffer)
+        free(handle->led_buffer);
+    free(handle);
+    return ESP_OK;
+}
+
+
+#if INPUT_FLAG
+/** 向某个WS2812写入RGB数据
+ * @param handle 句柄
+ * @param index 第几个WS2812（0开始）
+ * @param r,g,b RGB数据
+ * @return ESP_OK or ESP_FAIL
+*/
+esp_err_t ws2812_write(ws2812_strip_handle_t handle,uint32_t index,uint32_t r,uint32_t g,uint32_t b)
+{
+     rmt_transmit_config_t tx_config = { // 定义了 RMT（Remote Control Module）发送配置
+        .loop_count = 0, //表示发送的信号不会循环，这里是一次性发送信号给 WS2812
+    };
+    if(index >= handle->led_num)
+        return ESP_FAIL;
+    uint32_t start = index*3;
+    handle->led_buffer[start+0] = g & 0xff;     //注意，WS2812的数据顺序时GRB
+    handle->led_buffer[start+1] = r & 0xff;
+    handle->led_buffer[start+2] = b & 0xff;
+
+    return rmt_transmit(handle->led_chan, handle->led_encoder, handle->led_buffer, handle->led_num*3, &tx_config);
+    
+}
+#else 
+/** 向某个WS2812写入RGB数据
+ * @param handle 句柄
+ * @param index 第几个WS2812（0开始）
+ * @param r,g,b RGB数据
+ * @return ESP_OK or ESP_FAIL
+*/
+esp_err_t ws2812_write(ws2812_strip_handle_t handle, uint32_t index, uint32_t hex_color)
+{
+    rmt_transmit_config_t tx_config = {
+        .loop_count = 0, // 不循环发送
+    };
+    
+    if (index >= handle->led_num)
+        return ESP_FAIL;
+
+    uint32_t start = index * 3;
+    
+    // 从 hex_color 中提取 RGB 值
+    uint8_t r = (hex_color >> 16) & 0xff; // 提取红色部分
+    uint8_t g = (hex_color >> 8) & 0xff;  // 提取绿色部分
+    uint8_t b = hex_color & 0xff;         // 提取蓝色部分
+
+    // WS2812 的数据顺序是 GRB
+    handle->led_buffer[start + 0] = g;
+    handle->led_buffer[start + 1] = r;
+    handle->led_buffer[start + 2] = b;
+
+    return rmt_transmit(handle->led_chan, handle->led_encoder, handle->led_buffer, handle->led_num * 3, &tx_config);
+}
+#endif
+
+
+
+/** 灯光初始化*/
+void lightbegin(uint8_t mode)
+{
+    uint8_t i;
+    switch (mode)
+    {
+    case 1: // 单色 渐变 点亮熄灭3次
+        for (i = 1; i < 4; i++)
+        {
+            for (i = 1; i < 4; i++)
+            {
+                ws2812_fade(ws2812_handle, 0, 11, 0, 0, 0, 50, 0, 0, 200, 50); // 使用200步
+                vTaskDelay(pdMS_TO_TICKS(500));
+                ws2812_fade(ws2812_handle, 0, 11, 50, 0, 0, 0, 0, 0, 200, 50); // 使用200步
+                vTaskDelay(pdMS_TO_TICKS(500));
+            }
+        }
+        break;
+    case 2: // 单色 循环依次点亮 再全部灭亮3次
+        for (i = 0; i < 12; i++)
+        {
+            ws2812_write(ws2812_handle, i, 10, 10, 10);
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+        for (uint8_t j = 0; j < 3; j++)
+        {
+            for (i = 0; i < 12; i++)
+            {
+                ws2812_write(ws2812_handle, i, 0, 0, 0);
+            }
+            vTaskDelay(pdMS_TO_TICKS(500));
+            for (i = 0; i < 12; i++)
+            {
+                ws2812_write(ws2812_handle, i, 10, 10, 10);
+            }
+            vTaskDelay(pdMS_TO_TICKS(500));
+        }
+        break;
+    default: // 全部熄灭
+        for (i = 1; i < 12; i++)
+        {
+            ws2812_write(ws2812_handle, i, 0, 0, 0);
+        }
+        break;
+    }
+}
+
+
+/** 灯光全亮
+ * @param r 
+ * @param g
+ * @param b 
+*/
+void lighton()
+{
+    for (uint8_t i = 0; i < 12; i++)
+    {
+        ws2812_write(ws2812_handle, i, 10, 10, 10);
+    }
+}
+
+
+/** 灯光全熄*/
+void lightreset()
+{
+    for (uint8_t i = 0; i < 12; i++)
+    {
+        ws2812_write(ws2812_handle, i, 0, 0, 0);
+    }
+}
+
+/** 多个灯珠设置同一颜色
+ * @param num 灯珠数量
+ * @param r,g,b rgb值
+*/
+void lightadd(uint8_t num, uint8_t r, uint8_t g, uint8_t b)
+{
+    for (uint8_t i = 0; i < num; i++)
+    {
+        ws2812_write(ws2812_handle, i, r, g, b);
+    }
+}
+
+
+/** 灯珠颜色渐变\
+ * @param handle 句柄
+ * @param start_led 起始灯珠位置
+ * @param end_led 结束灯珠位置
+ * @param start_r,start_g,start_b 起始灯珠颜色
+ * @param end_r,end_g,end_b 结束灯珠颜色
+*/
+void light_color_gradient(ws2812_strip_handle_t handle, uint8_t start_led, uint8_t end_led, 
+              uint8_t start_r, uint8_t start_g, uint8_t start_b, 
+              uint8_t end_r, uint8_t end_g, uint8_t end_b) 
+{
+    // 计算LED数量
+    uint8_t num_leds = end_led - start_led + 1;
+    
+    // 线性插值计算每个LED的颜色
+    for (uint8_t i = 0; i < num_leds; i++) 
+    {
+        // 插值比例
+        float ratio = (float)i / (num_leds - 1);
+
+        // 计算当前LED的颜色
+        uint8_t r = (uint8_t)(start_r + ratio * (end_r - start_r));
+        uint8_t g = (uint8_t)(start_g + ratio * (end_g - start_g));
+        uint8_t b = (uint8_t)(start_b + ratio * (end_b - start_b));
+
+        // 写入LED颜色
+        ws2812_write(handle, start_led + i, r, g, b);
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
+
+
+
+/** 向某个WS2812写入RGB数据
+ * @param handle 句柄
+ * @param start_index 从第几个开始
+ * @param end_index 从第几个结束
+ * @param start_r 起始r值
+ * @param start_g 起始g值
+ * @param start_b 起始b值 
+ * @param end_r 结束r值 
+ * @param end_g 结束g值 
+ * @param end_b 结束b值 
+ * @param steps 步进值
+ * @param delay_ms 步进延时
+ * @return ESP_OK or ESP_FAIL
+*/
+esp_err_t ws2812_fade(ws2812_strip_handle_t handle, uint32_t start_index, uint32_t end_index, uint32_t start_r, uint32_t start_g, uint32_t start_b, uint32_t end_r, uint32_t end_g, uint32_t end_b, uint32_t steps, uint32_t delay_ms)
+{
+    if (start_index >= handle->led_num || end_index >= handle->led_num || start_index > end_index) {
+        return ESP_FAIL;
+    }
+
+    uint32_t total_leds = end_index - start_index + 1;
+    if (total_leds == 0) {
+        return ESP_OK;
+    }
+
+    // 使用整数计算每一步的增量，避免精度丢失
+    int32_t delta_r = (int32_t)(end_r - start_r);
+    int32_t delta_g = (int32_t)(end_g - start_g);
+    int32_t delta_b = (int32_t)(end_b - start_b);
+
+    for (uint32_t step = 0; step < steps; ++step) {
+        uint32_t current_r = start_r + (step * delta_r) / (steps - 1);
+        uint32_t current_g = start_g + (step * delta_g) / (steps - 1);
+        uint32_t current_b = start_b + (step * delta_b) / (steps - 1);
+
+        for (uint32_t i = start_index; i <= end_index; ++i) {
+            ws2812_write(handle, i, current_r, current_g, current_b);
+        }
+        vTaskDelay(pdMS_TO_TICKS(delay_ms));
+    }
+
+    // 确保最终状态
+    for (uint32_t i = start_index; i <= end_index; ++i) {
+        ws2812_write(handle, i, end_r, end_g, end_b);
+    }
+
+    return ESP_OK;
+}
