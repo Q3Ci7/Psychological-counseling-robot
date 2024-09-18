@@ -32,6 +32,20 @@ void ultrasonic_init(void)
     gpio_isr_handler_add(ECHO_PIN, echo_isr_handler, (void *)ECHO_PIN);
 }
 
+// 释放超声波传感器资源
+void ultrasonic_deinit(void)
+{
+    // 移除 GPIO 中断处理程序
+    gpio_isr_handler_remove(ECHO_PIN);
+
+    // 卸载中断服务
+    gpio_uninstall_isr_service();
+
+    // 配置 GPIO 为默认状态（可选）
+    gpio_set_direction(TRIGGER_PIN, GPIO_MODE_DISABLE);
+    gpio_set_direction(ECHO_PIN, GPIO_MODE_DISABLE);
+}
+
 // 发送触发脉冲
 static void send_trigger_pulse(void)
 {

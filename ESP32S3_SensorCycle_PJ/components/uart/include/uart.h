@@ -22,8 +22,9 @@ typedef struct
 
 extern QueueHandle_t data_queue2;
 extern QueueHandle_t data_queue3;
+extern volatile bool shake_flag; 
 
 void init_uart();
 void rx_uart_task(void *pvParameters);
-
+void setup_uart_pattern_intr();
 #endif

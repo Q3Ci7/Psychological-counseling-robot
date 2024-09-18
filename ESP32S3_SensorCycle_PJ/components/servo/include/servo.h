@@ -15,7 +15,7 @@
 #define MAX_SERVOS 8
 
 
-#define smooth_flag  0//可选 起始位置-目标位置/直接到目标位置
+#define smooth_flag  1//可选 起始位置-目标位置/直接到目标位置
 
 // 初始化单个舵机
 void servo_init(int channel, int gpio_num);

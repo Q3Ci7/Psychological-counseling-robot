@@ -31,22 +31,47 @@
 // 初始化单个舵机
 void servo_init(int channel, int gpio_num)
 {
+    // 配置 LEDC 定时器，用于生成伺服电机所需的PWM信号
     ledc_timer_config_t ledc_timer = {
-        .duty_resolution = LEDC_TIMER_13_BIT, // 分辨率为13位
-        .freq_hz = 50,                        // 频率为50Hz
-        .speed_mode = LEDC_LOW_SPEED_MODE,    // 使用低速模式
+        .duty_resolution = LEDC_TIMER_13_BIT, // 设置占空比分辨率为13位，表示2^13=8192个级别
+        .freq_hz = 50,                        // PWM频率设置为50Hz（适合伺服电机的标准控制频率）
+        .speed_mode = LEDC_LOW_SPEED_MODE,    // 使用低速模式（LEDC低速通道）
         .timer_num = LEDC_TIMER_0             // 使用定时器0
     };
-    ledc_timer_config(&ledc_timer);
+    ledc_timer_config(&ledc_timer); // 应用定时器配置
 
+    // 配置 LEDC 通道，用于输出PWM信号到指定GPIO引脚
     ledc_channel_config_t ledc_channel = {
-        .channel = (ledc_channel_t)channel,
-        .duty = 0, 
-        .gpio_num = gpio_num,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .hpoint = 0,
-        .timer_sel = LEDC_TIMER_0};
-    ledc_channel_config(&ledc_channel);
+        .channel = (ledc_channel_t)channel,   // LEDC通道号，通过传入参数指定（0~7通道）
+        .duty = 0,                            // 初始占空比设为0，表示伺服电机不移动
+        .gpio_num = gpio_num,                 // 输出PWM信号的GPIO引脚，通过传入参数指定
+        .speed_mode = LEDC_LOW_SPEED_MODE,    // 使用低速模式（与定时器的模式匹配）
+        .hpoint = 0,                          // 设置脉冲在计时器周期中的起始位置（默认设为0）
+        .timer_sel = LEDC_TIMER_0             // 选择LEDC定时器0（与上面的定时器配置一致）
+    };
+    ledc_channel_config(&ledc_channel);       // 应用通道配置
+}
+
+void servo_deinit(int channel)
+{
+    // 停止通道输出
+    ledc_stop(LEDC_LOW_SPEED_MODE, channel, 0);
+
+    // 清除通道配置
+    ledc_channel_config_t ledc_channel = {
+        .channel = (ledc_channel_t)channel,   // LEDC通道号，通过传入参数指定（0~7通道）
+        .duty = 0,                            // 占空比设为0，确保停止输出
+        .gpio_num = -1,                       // 无效GPIO引脚
+        .speed_mode = LEDC_LOW_SPEED_MODE,    // 使用低速模式
+        .hpoint = 0,                          // 设置脉冲在计时器周期中的起始位置（默认设为0）
+        .timer_sel = LEDC_TIMER_0             // 选择LEDC定时器0（与上面的定时器配置一致）
+    };
+    ledc_channel_config(&ledc_channel);       // 应用清除通道配置
+
+    // 如果所有舵机通道都不再使用，可以停止并清除定时器配置
+    // 这里只是停止定时器的示例，实际应用中可能需要根据情况进行修改
+    ledc_timer_pause(LEDC_LOW_SPEED_MODE, LEDC_TIMER_0);  // 暂停定时器
+    ledc_timer_rst(LEDC_LOW_SPEED_MODE, LEDC_TIMER_0);    // 重置定时器
 }
 
 // 设置舵机角度

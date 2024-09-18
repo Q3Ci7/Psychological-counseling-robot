@@ -246,8 +246,6 @@ esp_err_t ws2812_write(ws2812_strip_handle_t handle,uint32_t index,uint32_t r,ui
     return rmt_transmit(handle->led_chan, handle->led_encoder, handle->led_buffer, handle->led_num*3, &tx_config);
     
 }
-
-
 #else 
 /** 向某个WS2812写入RGB数据
  * @param handle 句柄
@@ -278,57 +276,8 @@ esp_err_t ws2812_write(ws2812_strip_handle_t handle, uint32_t index, uint32_t he
 
     return rmt_transmit(handle->led_chan, handle->led_encoder, handle->led_buffer, handle->led_num * 3, &tx_config);
 }
-
 #endif
 
-/** 向某个WS2812写入RGB数据
- * @param handle 句柄
- * @param start_index 从第几个开始
- * @param end_index 从第几个结束
- * @param start_r 起始r值
- * @param start_g 起始g值
- * @param start_b 起始b值 
- * @param end_r 结束r值 
- * @param end_g 结束g值 
- * @param end_b 结束b值 
- * @param steps 步进值
- * @param delay_ms 步进延时
- * @return ESP_OK or ESP_FAIL
-*/
-esp_err_t ws2812_fade(ws2812_strip_handle_t handle, uint32_t start_index, uint32_t end_index, uint32_t start_r, uint32_t start_g, uint32_t start_b, uint32_t end_r, uint32_t end_g, uint32_t end_b, uint32_t steps, uint32_t delay_ms)
-{
-    if (start_index >= handle->led_num || end_index >= handle->led_num || start_index > end_index) {
-        return ESP_FAIL;
-    }
-
-    uint32_t total_leds = end_index - start_index + 1;
-    if (total_leds == 0) {
-        return ESP_OK;
-    }
-
-    // 使用整数计算每一步的增量，避免精度丢失
-    int32_t delta_r = (int32_t)(end_r - start_r);
-    int32_t delta_g = (int32_t)(end_g - start_g);
-    int32_t delta_b = (int32_t)(end_b - start_b);
-
-    for (uint32_t step = 0; step < steps; ++step) {
-        uint32_t current_r = start_r + (step * delta_r) / (steps - 1);
-        uint32_t current_g = start_g + (step * delta_g) / (steps - 1);
-        uint32_t current_b = start_b + (step * delta_b) / (steps - 1);
-
-        for (uint32_t i = start_index; i <= end_index; ++i) {
-            ws2812_write(handle, i, current_r, current_g, current_b);
-        }
-        vTaskDelay(pdMS_TO_TICKS(delay_ms));
-    }
-
-    // 确保最终状态
-    for (uint32_t i = start_index; i <= end_index; ++i) {
-        ws2812_write(handle, i, end_r, end_g, end_b);
-    }
-
-    return ESP_OK;
-}
 
 
 /** 灯光初始化*/
@@ -379,6 +328,20 @@ void lightbegin(uint8_t mode)
 }
 
 
+/** 灯光全亮
+ * @param r 
+ * @param g
+ * @param b 
+*/
+void lighton()
+{
+    for (uint8_t i = 0; i < 12; i++)
+    {
+        ws2812_write(ws2812_handle, i, 10, 10, 10);
+    }
+}
+
+
 /** 灯光全熄*/
 void lightreset()
 {
@@ -387,7 +350,6 @@ void lightreset()
         ws2812_write(ws2812_handle, i, 0, 0, 0);
     }
 }
-
 
 /** 多个灯珠设置同一颜色
  * @param num 灯珠数量
@@ -402,17 +364,84 @@ void lightadd(uint8_t num, uint8_t r, uint8_t g, uint8_t b)
 }
 
 
-/** 灯珠颜色渐变
- * @param start_index 起始灯珠位置
- * @param end_index 结束灯珠位置
- * @param s_r,s_g,s_b 起始灯珠颜色
- * @param e_r,e_g,e_b 结束灯珠颜色
+/** 灯珠颜色渐变\
+ * @param handle 句柄
+ * @param start_led 起始灯珠位置
+ * @param end_led 结束灯珠位置
+ * @param start_r,start_g,start_b 起始灯珠颜色
+ * @param end_r,end_g,end_b 结束灯珠颜色
 */
+void light_color_gradient(ws2812_strip_handle_t handle, uint8_t start_led, uint8_t end_led, 
+              uint8_t start_r, uint8_t start_g, uint8_t start_b, 
+              uint8_t end_r, uint8_t end_g, uint8_t end_b) 
+{
+    // 计算LED数量
+    uint8_t num_leds = end_led - start_led + 1;
+    
+    // 线性插值计算每个LED的颜色
+    for (uint8_t i = 0; i < num_leds; i++) 
+    {
+        // 插值比例
+        float ratio = (float)i / (num_leds - 1);
 
-// void light_color_gradient(uint8_t start_index,uint8_t end_index,uint8_t s_r,uint8_t s_g,uint8_t s_b,)
-// {
-//     // for(uint8_t i = )
-//     // {
-        
-//     // }
-// }
+        // 计算当前LED的颜色
+        uint8_t r = (uint8_t)(start_r + ratio * (end_r - start_r));
+        uint8_t g = (uint8_t)(start_g + ratio * (end_g - start_g));
+        uint8_t b = (uint8_t)(start_b + ratio * (end_b - start_b));
+
+        // 写入LED颜色
+        ws2812_write(handle, start_led + i, r, g, b);
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
+
+
+
+/** 向某个WS2812写入RGB数据
+ * @param handle 句柄
+ * @param start_index 从第几个开始
+ * @param end_index 从第几个结束
+ * @param start_r 起始r值
+ * @param start_g 起始g值
+ * @param start_b 起始b值 
+ * @param end_r 结束r值 
+ * @param end_g 结束g值 
+ * @param end_b 结束b值 
+ * @param steps 步进值
+ * @param delay_ms 步进延时
+ * @return ESP_OK or ESP_FAIL
+*/
+esp_err_t ws2812_fade(ws2812_strip_handle_t handle, uint32_t start_index, uint32_t end_index, uint32_t start_r, uint32_t start_g, uint32_t start_b, uint32_t end_r, uint32_t end_g, uint32_t end_b, uint32_t steps, uint32_t delay_ms)
+{
+    if (start_index >= handle->led_num || end_index >= handle->led_num || start_index > end_index) {
+        return ESP_FAIL;
+    }
+
+    uint32_t total_leds = end_index - start_index + 1;
+    if (total_leds == 0) {
+        return ESP_OK;
+    }
+
+    // 使用整数计算每一步的增量，避免精度丢失
+    int32_t delta_r = (int32_t)(end_r - start_r);
+    int32_t delta_g = (int32_t)(end_g - start_g);
+    int32_t delta_b = (int32_t)(end_b - start_b);
+
+    for (uint32_t step = 0; step < steps; ++step) {
+        uint32_t current_r = start_r + (step * delta_r) / (steps - 1);
+        uint32_t current_g = start_g + (step * delta_g) / (steps - 1);
+        uint32_t current_b = start_b + (step * delta_b) / (steps - 1);
+
+        for (uint32_t i = start_index; i <= end_index; ++i) {
+            ws2812_write(handle, i, current_r, current_g, current_b);
+        }
+        vTaskDelay(pdMS_TO_TICKS(delay_ms));
+    }
+
+    // 确保最终状态
+    for (uint32_t i = start_index; i <= end_index; ++i) {
+        ws2812_write(handle, i, end_r, end_g, end_b);
+    }
+
+    return ESP_OK;
+}
