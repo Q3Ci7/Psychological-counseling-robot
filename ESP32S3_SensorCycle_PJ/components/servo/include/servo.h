@@ -6,21 +6,21 @@
 
 
 /********************************************************** */
-// ¶¨Òå¶æ»úµÄ×îĞ¡ºÍ×î´óÂö¿í£¬ÒÔ¼°×î´ó½Ç¶È
+// å®šä¹‰èˆµæœºçš„æœ€å°å’Œæœ€å¤§è„‰å®½ï¼Œä»¥åŠæœ€å¤§è§’åº¦
 #define SERVO_MIN_PULSEWIDTH 500
 #define SERVO_MAX_PULSEWIDTH 2500
 #define SERVO_MAX_ANGLE 180
 
-// ¶¨Òå×î¶àÖ§³ÖµÄ¶æ»úÊıÁ¿
+// å®šä¹‰æœ€å¤šæ”¯æŒçš„èˆµæœºæ•°é‡
 #define MAX_SERVOS 8
 
 
-#define smooth_flag  1//¿ÉÑ¡ ÆğÊ¼Î»ÖÃ-Ä¿±êÎ»ÖÃ/Ö±½Óµ½Ä¿±êÎ»ÖÃ
+#define smooth_flag  1//å¯é€‰ èµ·å§‹ä½ç½®-ç›®æ ‡ä½ç½®/ç›´æ¥åˆ°ç›®æ ‡ä½ç½®
 
-// ³õÊ¼»¯µ¥¸ö¶æ»ú
+// åˆå§‹åŒ–å•ä¸ªèˆµæœº
 void servo_init(int channel, int gpio_num);
-
-// ÉèÖÃ¶æ»ú½Ç¶È
+void servo_deinit(int channel);
+// è®¾ç½®èˆµæœºè§’åº¦
 
 void set_servo_angle(int channel, int angle);
 

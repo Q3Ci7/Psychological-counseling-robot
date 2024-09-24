@@ -1,16 +1,17 @@
 #include "audio.h"
 
 static const char *UART_TAG = "UART";
+volatile bool sdbk_flag = false;
 #define BUF_0_SIZE 1024
 
-/** ¼ÆËãÊı¾İ°üĞ£ÑéºÍ
- * @param command Ö¸Ïò°üº¬ÃüÁîÊı¾İ°üµÄÊı×éµÄÖ¸Õë
- * @param size Êı×éµÄ´óĞ¡£¨ÒÔ×Ö½ÚÎªµ¥Î»£©£¬°üÀ¨Êı¾İºÍĞ£ÑéºÍ×Ö¶Î
+/** è®¡ç®—æ•°æ®åŒ…æ ¡éªŒå’Œ
+ * @param command æŒ‡å‘åŒ…å«å‘½ä»¤æ•°æ®åŒ…çš„æ•°ç»„çš„æŒ‡é’ˆ
+ * @param size æ•°ç»„çš„å¤§å°ï¼ˆä»¥å­—èŠ‚ä¸ºå•ä½ï¼‰ï¼ŒåŒ…æ‹¬æ•°æ®å’Œæ ¡éªŒå’Œå­—æ®µ
  */
 uint8_t calculate_checksum(const uint8_t *command, size_t size)
 {
     uint8_t checksum = 0;
-    for (size_t i = 0; i < size - 1; i++) // ×¢ÒâÕâÀïÊ¹ÓÃ size - 1
+    for (size_t i = 0; i < size - 1; i++) // æ³¨æ„è¿™é‡Œä½¿ç”¨ size - 1
     {
         checksum += command[i];
     }
@@ -18,27 +19,27 @@ uint8_t calculate_checksum(const uint8_t *command, size_t size)
     return checksum;
 }
 
-/** ·¢ËÍÃüÁîÊı¾İ°ü
- * @desc ¸Ãº¯ÊıÍ¨¹ı UART ·¢ËÍ¸ø¶¨µÄÃüÁîÊı¾İ°ü
- * @param data Ö¸Ïò°üº¬Òª·¢ËÍµÄÊı¾İ°üµÄÊı×éµÄÖ¸Õë
- * @param len Êı¾İ°üµÄ³¤¶È£¨ÒÔ×Ö½ÚÎªµ¥Î»£©
+/** å‘é€å‘½ä»¤æ•°æ®åŒ…
+ * @desc è¯¥å‡½æ•°é€šè¿‡ UART å‘é€ç»™å®šçš„å‘½ä»¤æ•°æ®åŒ…
+ * @param data æŒ‡å‘åŒ…å«è¦å‘é€çš„æ•°æ®åŒ…çš„æ•°ç»„çš„æŒ‡é’ˆ
+ * @param len æ•°æ®åŒ…çš„é•¿åº¦ï¼ˆä»¥å­—èŠ‚ä¸ºå•ä½ï¼‰
  */
 void send_command(const uint8_t *data, size_t len)
 {
     uart_write_bytes(UART_NUM_1, (const char *)data, len);
 }
 
-/** ¿ªÊ¼²¥·ÅÒôÆµ
+/** å¼€å§‹æ’­æ”¾éŸ³é¢‘
  */
 void A_play()
 {
-    uint8_t command[] = {0xAA, 0x02, 0x00, 0x00}; // ³õÊ¼»¯°üº¬Ğ£ÑéºÍÎ»ÖÃµÄÊı×é
+    uint8_t command[] = {0xAA, 0x02, 0x00, 0x00}; // åˆå§‹åŒ–åŒ…å«æ ¡éªŒå’Œä½ç½®çš„æ•°ç»„
 
     uint8_t checksum = calculate_checksum(command, sizeof(command));
     command[sizeof(command) - 1] = checksum;
     send_command(command, sizeof(command));
 
-    // ´òÓ¡·¢ËÍµÄÃüÁîºÍĞ£ÑéºÍ
+    // æ‰“å°å‘é€çš„å‘½ä»¤å’Œæ ¡éªŒå’Œ
     ESP_LOGI(UART_TAG, "Command sent:");
     for (int i = 0; i < sizeof(command); i++)
     {
@@ -46,7 +47,7 @@ void A_play()
     }
 }
 
-/** Í£Ö¹²¥·ÅÒôÆµ
+/** åœæ­¢æ’­æ”¾éŸ³é¢‘
  */
 void A_stop()
 {
@@ -56,7 +57,7 @@ void A_stop()
     command[sizeof(command) - 1] = checksum;
     send_command(command, sizeof(command));
 
-    // ´òÓ¡·¢ËÍµÄÃüÁîºÍĞ£ÑéºÍ
+    // æ‰“å°å‘é€çš„å‘½ä»¤å’Œæ ¡éªŒå’Œ
     ESP_LOGI(UART_TAG, "Command sent:");
     for (int i = 0; i < sizeof(command); i++)
     {
@@ -64,8 +65,8 @@ void A_stop()
     }
 }
 
-/** Ñ¡ÔñÒôÆµÇúÄ¿
- * @param num ²¥·ÅÇúÄ¿Ñ¡Ôñ
+/** é€‰æ‹©éŸ³é¢‘æ›²ç›®
+ * @param num æ’­æ”¾æ›²ç›®é€‰æ‹©
  */
 void A_choose(uint16_t track_num)
 {
@@ -76,7 +77,7 @@ void A_choose(uint16_t track_num)
     command[sizeof(command) - 1] = checksum;
     send_command(command, sizeof(command));
 
-    // ´òÓ¡·¢ËÍµÄÃüÁîºÍĞ£ÑéºÍ
+    // æ‰“å°å‘é€çš„å‘½ä»¤å’Œæ ¡éªŒå’Œ
     ESP_LOGI(UART_TAG, "Command sent:");
     for (int i = 0; i < sizeof(command); i++)
     {
@@ -84,8 +85,8 @@ void A_choose(uint16_t track_num)
     }
 }
 
-/** ÉèÖÃÒôÆµÒôÁ¿ÒôÆµ
- * @param volume ÒôÁ¿Ñ¡Ôñ£¨0-30£©
+/** è®¾ç½®éŸ³é¢‘éŸ³é‡éŸ³é¢‘
+ * @param volume éŸ³é‡é€‰æ‹©ï¼ˆ0-30ï¼‰
  */
 void A_setvolume(uint8_t volume)
 {
@@ -94,7 +95,7 @@ void A_setvolume(uint8_t volume)
     command[sizeof(command) - 1] = checksum;
     send_command(command, sizeof(command));
 
-    // ´òÓ¡·¢ËÍµÄÃüÁîºÍĞ£ÑéºÍ
+    // æ‰“å°å‘é€çš„å‘½ä»¤å’Œæ ¡éªŒå’Œ
     ESP_LOGI(UART_TAG, "Command sent:");
     for (int i = 0; i < sizeof(command); i++)
     {
@@ -109,7 +110,7 @@ void A_setCyclemode(uint8_t mode)
     command[sizeof(command) - 1] = checksum;
     send_command(command, sizeof(command));
 
-    // ´òÓ¡·¢ËÍµÄÃüÁîºÍĞ£ÑéºÍ
+    // æ‰“å°å‘é€çš„å‘½ä»¤å’Œæ ¡éªŒå’Œ
     ESP_LOGI(UART_TAG, "Command sent:");
     for (int i = 0; i < sizeof(command); i++)
     {
@@ -121,7 +122,7 @@ void checkplystation(void *pvParameter)
 {
     uint8_t data[BUF_0_SIZE];
     uint8_t command[] = {0xAA, 0x01, 0x00, 0xAB};
-    const uint8_t sequence1[] = {0xaa, 0x01, 0x01, 0x00, 0xac}; // Í£Ö¹
+    const uint8_t sequence1[] = {0xaa, 0x01, 0x01, 0x00, 0xac}; // åœæ­¢
 
     size_t length = sizeof(sequence1) / sizeof(sequence1[0]);
 
@@ -140,9 +141,14 @@ void checkplystation(void *pvParameter)
                 if (result == 0)
                 {
                     task_control_flag = false;
+
+                    
                     if (end_flag == 0)
                     {
-                        uart_write_bytes(UART_NUM_2, "selfend", strlen("selfend"));
+                        if (sdbk_flag == true)
+                        {
+                            uart_write_bytes(UART_NUM_2, "selfend", strlen("selfend"));
+                        }
                     }
 
                     else if (end_flag == 1)
@@ -166,10 +172,10 @@ void checkplystation(void *pvParameter)
     }
 }
 
-/** ÒôÆµ²¥·Å
- * @param num ²¥·ÅÇúÄ¿Ñ¡Ôñ
- * @param volume ÒôÁ¿Ñ¡Ôñ£¨0-30£©
- * @param duration ³ÖĞøÊ±¼ä£¨min£©
+/** éŸ³é¢‘æ’­æ”¾
+ * @param num æ’­æ”¾æ›²ç›®é€‰æ‹©
+ * @param volume éŸ³é‡é€‰æ‹©ï¼ˆ0-30ï¼‰
+ * @param duration æŒç»­æ—¶é—´ï¼ˆminï¼‰
  */
 void Audio(uint8_t num)
 {

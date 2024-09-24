@@ -11,54 +11,54 @@
 
 // static TaskHandle_t check_playback_task_handle = NULL;
 // static SemaphoreHandle_t control_semaphore;
-extern volatile bool task_control_flag;//ÈÎÎñ¿ØÖÆ±äÁ¿
-extern volatile uint8_t end_flag;//ÈÎÎñ¿ØÖÆ±äÁ¿
+extern volatile bool task_control_flag;//ä»»åŠ¡æ§åˆ¶å˜é‡
+extern volatile uint8_t end_flag;//ä»»åŠ¡æ§åˆ¶å˜é‡
 
 
 
 
 
 
-/** ¼ÆËãÊı¾İ°üĞ£ÑéºÍ
- * @param command Ö¸Ïò°üº¬ÃüÁîÊı¾İ°üµÄÊı×éµÄÖ¸Õë
- * @param size Êı×éµÄ´óĞ¡£¨ÒÔ×Ö½ÚÎªµ¥Î»£©£¬°üÀ¨Êı¾İºÍĞ£ÑéºÍ×Ö¶Î
+/** è®¡ç®—æ•°æ®åŒ…æ ¡éªŒå’Œ
+ * @param command æŒ‡å‘åŒ…å«å‘½ä»¤æ•°æ®åŒ…çš„æ•°ç»„çš„æŒ‡é’ˆ
+ * @param size æ•°ç»„çš„å¤§å°ï¼ˆä»¥å­—èŠ‚ä¸ºå•ä½ï¼‰ï¼ŒåŒ…æ‹¬æ•°æ®å’Œæ ¡éªŒå’Œå­—æ®µ
  */
 uint8_t calculate_checksum(const uint8_t *command, size_t size);
 
-/** ·¢ËÍÃüÁîÊı¾İ°ü
- * @desc ¸Ãº¯ÊıÍ¨¹ı UART ·¢ËÍ¸ø¶¨µÄÃüÁîÊı¾İ°ü
- * @param data Ö¸Ïò°üº¬Òª·¢ËÍµÄÊı¾İ°üµÄÊı×éµÄÖ¸Õë
- * @param len Êı¾İ°üµÄ³¤¶È£¨ÒÔ×Ö½ÚÎªµ¥Î»£©
+/** å‘é€å‘½ä»¤æ•°æ®åŒ…
+ * @desc è¯¥å‡½æ•°é€šè¿‡ UART å‘é€ç»™å®šçš„å‘½ä»¤æ•°æ®åŒ…
+ * @param data æŒ‡å‘åŒ…å«è¦å‘é€çš„æ•°æ®åŒ…çš„æ•°ç»„çš„æŒ‡é’ˆ
+ * @param len æ•°æ®åŒ…çš„é•¿åº¦ï¼ˆä»¥å­—èŠ‚ä¸ºå•ä½ï¼‰
  */
 void send_command(const uint8_t *data, size_t len);
 
-/** ¿ªÊ¼²¥·ÅÒôÆµ
+/** å¼€å§‹æ’­æ”¾éŸ³é¢‘
  */
 void A_play();
 
-/** Í£Ö¹²¥·ÅÒôÆµ
+/** åœæ­¢æ’­æ”¾éŸ³é¢‘
  */
 void A_stop();
 
-/** Ñ¡ÔñÒôÆµÇúÄ¿
- * @param num ²¥·ÅÇúÄ¿Ñ¡Ôñ
+/** é€‰æ‹©éŸ³é¢‘æ›²ç›®
+ * @param num æ’­æ”¾æ›²ç›®é€‰æ‹©
  */
 void A_choose(uint16_t track_num);
 
-/** ÉèÖÃÒôÆµÒôÁ¿ÒôÆµ
- * @param volume ÒôÁ¿Ñ¡Ôñ£¨0-30£©
+/** è®¾ç½®éŸ³é¢‘éŸ³é‡éŸ³é¢‘
+ * @param volume éŸ³é‡é€‰æ‹©ï¼ˆ0-30ï¼‰
  */
 void A_setvolume(uint8_t volume);
 
-/** ´®¿Ú½ÓÊÕ¿ØÖÆÒôÆµ²¥·Å
+/** ä¸²å£æ¥æ”¶æ§åˆ¶éŸ³é¢‘æ’­æ”¾
  * @param pvParameters
  */
 void rx_uart_task(void *pvParameters);
 
-/** ÒôÆµ²¥·Å
- * @param num ²¥·ÅÇúÄ¿Ñ¡Ôñ
- * @param volume ÒôÁ¿Ñ¡Ôñ£¨0-30£©
- * @param duration ³ÖĞøÊ±¼ä£¨min£©
+/** éŸ³é¢‘æ’­æ”¾
+ * @param num æ’­æ”¾æ›²ç›®é€‰æ‹©
+ * @param volume éŸ³é‡é€‰æ‹©ï¼ˆ0-30ï¼‰
+ * @param duration æŒç»­æ—¶é—´ï¼ˆminï¼‰
  */
 void Audio(uint8_t num);
 void Audio_init(uint8_t playmode,uint8_t volume);

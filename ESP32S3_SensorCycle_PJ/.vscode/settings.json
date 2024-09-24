@@ -51,7 +51,8 @@
         "emotion.h": "c",
         "hcsr.h": "c",
         "iterator": "c",
-        "cstring": "c"
+        "cstring": "c",
+        "esp_timer.h": "c"
     },
     "idf.openOcdConfigs": [
         "board/esp32s3-builtin.cfg"

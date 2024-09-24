@@ -2,7 +2,7 @@
  *
  * @file:
  *
- * @author: Ricky
+ * @author:
  *
  * @date:
  *
@@ -27,9 +27,9 @@ int idx = 0;         //
 uint8_t lednum = 12; // Number of WS2812B_LED
 
 // QueueHandle_t data_queue1; // Create queue handle
-QueueHandle_t data_queue2;   // Create queue handle
-QueueHandle_t data_queue3;   // Create queue handle
-QueueHandle_t distanceQueue; // Create distance queue handle
+QueueHandle_t data_queue2;    // Create queue handle
+QueueHandle_t data_queue3;    // Create queue handle
+QueueHandle_t distanceQueue;  // Create distance queue handle
 
 static TaskHandle_t check_task_handle = NULL; // check play station task handle
 volatile bool task_control_flag = false;      // check play station task contol flag
@@ -299,10 +299,11 @@ void shake()
         current_time += step;
     }
 
-    // 将头部舵机转到最佳角度
-    // servo_smooth_move(0, 100, best_angle, 2);
-    set_servo_angle(0, best_angle);
-    shake_flag = false;
+    if (shake_flag)
+    {
+        set_servo_angle(0, best_angle);
+    }
+    // shake_flag = false;
 }
 
 void psychic_run_task(void *pvParameters)
@@ -320,15 +321,16 @@ void psychic_run_task(void *pvParameters)
                 A_choose(1);
                 shake();
                 end_flag = 0;
+                sdbk_flag = true;
                 task_control_flag = true;
-                ESP_LOGI("msgtype", "1");
+                // ESP_LOGI("msgtype", "1");
                 break;
             case 2:
                 Audio_init(2, voice_volume);
                 A_choose(2);
                 end_flag = 1;
                 task_control_flag = true;
-                ESP_LOGI("msgtype", "2");
+                // ESP_LOGI("msgtype", "2");
                 break;
             case 3:
             case 4:
@@ -402,4 +404,14 @@ void app_main()
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
     ws2812_deinit(ws2812_handle);
+    vQueueDelete(data_queue2);
+    vQueueDelete(data_queue3);
+    vQueueDelete(distanceQueue);
+    uart_driver_delete(UART_NUM_0);
+    uart_driver_delete(UART_NUM_1);
+    uart_driver_delete(UART_NUM_2);
+    ultrasonic_deinit();
+    servo_deinit(0);
+    servo_deinit(1);
+    servo_deinit(2);
 }

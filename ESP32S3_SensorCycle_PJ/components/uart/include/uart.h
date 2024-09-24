@@ -25,6 +25,7 @@ extern QueueHandle_t data_queue3;
 
 
 extern volatile bool shake_flag; 
+extern volatile bool sdbk_flag;
 
 void init_uart();
 void rx_uart_task(void *pvParameters);

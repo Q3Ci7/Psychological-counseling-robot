@@ -14,7 +14,7 @@ extern QueueHandle_t distanceQueue;//
 
 // 初始化超声波模块
 void ultrasonic_init(void);
-
+void ultrasonic_deinit(void);
 // 触发测距并返回距离（单位：厘米）
 float ultrasonic_get_distance(void);
 // 触发测距并返回距离（单位：厘米）

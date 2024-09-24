@@ -1,5 +1,5 @@
 #include "uart.h"
-
+#include "servo.h"
 QueueHandle_t uart_queue;
 
 /** 串口初始化
@@ -32,7 +32,6 @@ void init_uart()
     uart_driver_install(UART_NUM_2, BUF_SIZE * 2, BUF_SIZE * 2, 20, &uart_queue, 0);
 }
 
-
 // 函数化处理消息发送
 void send_message_to_queue(int queue_type, void *msg, int msg_size)
 {
@@ -43,21 +42,19 @@ void send_message_to_queue(int queue_type, void *msg, int msg_size)
 }
 
 // 字符串和消息类型对应表
-typedef struct {
+typedef struct
+{
     char *str;
     int msgtype;
     int queue_type;
 } CommandMapping;
 
 CommandMapping commands[] = {
-    {"self", 1, 2}, {"pic", 2, 2}, {"warm", 1, 3}, {"happy", 2, 3}, {"calm", 3, 3},
-    {"sad", 4, 3}, {"afraid", 5, 3}, {"scared", 6, 3}, {"anger", 7, 3}, 
-    {"1zh", 3, 2}, {"2zh", 4, 2}, {"3zh", 5, 2}, {"4zh", 6, 2},
-    {"1en", 7, 2}, {"2en", 8, 2}, {"3en", 9, 2}, {"4en", 10, 2},
-    {"1it", 11, 2}, {"2it", 12, 2}, {"3it", 13, 2}, {"4it", 14, 2},
-    {"stopplay", 15, 2}, {"end", 16, 2}
-};
-
+    {"self", 1, 2}, {"pic", 2, 2}, {"warm", 1, 3}, {"happy", 2, 3}, {"calm", 3, 3}, {"sad", 4, 3}, {"afraid", 5, 3}, {"scared", 6, 3}, {"anger", 7, 3},
+     {"1zh", 3, 2}, {"2zh", 4, 2}, {"3zh", 5, 2}, {"4zh", 6, 2}, 
+     {"1en", 7, 2}, {"2en", 8, 2}, {"3en", 9, 2}, {"4en", 10, 2}, 
+     {"1it", 11, 2}, {"2it", 12, 2}, {"3it", 13, 2}, {"4it", 14, 2}, 
+     {"stopplay", 15, 2}, {"end", 16, 2}};
 
 // UART事件处理任务
 void uart_event_task(void *pvParameters)
@@ -66,11 +63,11 @@ void uart_event_task(void *pvParameters)
     Message msg;
     EMO emo;
     uint8_t *data = (uint8_t *)malloc(BUF_SIZE);
-    
+
     while (1)
     {
         // 等待UART事件
-        if (xQueueReceive(uart_queue, (void*)&event, portMAX_DELAY))
+        if (xQueueReceive(uart_queue, (void *)&event, portMAX_DELAY))
         {
             bzero(data, BUF_SIZE);
 
@@ -90,7 +87,11 @@ void uart_event_task(void *pvParameters)
                         // 如果接收到 "end" 字符串，停止 shake 动作
                         if (strcmp(commands[i].str, "end") == 0)
                         {
-                            shake_flag = false;  // 修改 shake_flag 停止 shake
+                            shake_flag = false; // 修改 shake_flag 停止 shake
+                            sdbk_flag = false; 
+                            set_servo_angle(0, 52);
+                            set_servo_angle(2, 0);
+                            set_servo_angle(1, 30);
                             ESP_LOGI("UART", "Received 'end', shake_flag set to false");
                         }
                         if (commands[i].queue_type == 2)
@@ -117,10 +118,3 @@ void uart_event_task(void *pvParameters)
     }
     free(data);
 }
-
-
-
-
-
-
-

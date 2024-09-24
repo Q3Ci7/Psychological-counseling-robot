@@ -1,17 +1,17 @@
 #include "HCSR.h"
 #include "esp_timer.h"
 
-// ÓÃÓÚ´æ´¢»Ø²¨ĞÅºÅµÄÊ±¼ä´Á
+// ç”¨äºå­˜å‚¨å›æ³¢ä¿¡å·çš„æ—¶é—´æˆ³
 static int64_t start_time, end_time;
 
 void IRAM_ATTR echo_isr_handler(void *arg);
 
-// ³õÊ¼»¯ GPIO Òı½Å
+// åˆå§‹åŒ– GPIO å¼•è„š
 void ultrasonic_init(void)
 {
     gpio_config_t io_conf;
 
-    // ÅäÖÃ´¥·¢Òı½Å
+    // é…ç½®è§¦å‘å¼•è„š
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pin_bit_mask = (1ULL << TRIGGER_PIN);
@@ -19,44 +19,44 @@ void ultrasonic_init(void)
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     gpio_config(&io_conf);
 
-    // ÅäÖÃ»Ø²¨Òı½Å
-    io_conf.intr_type = GPIO_INTR_ANYEDGE; // Ê¹ÓÃÈÎÒâ±ßÔµÖĞ¶Ï
+    // é…ç½®å›æ³¢å¼•è„š
+    io_conf.intr_type = GPIO_INTR_ANYEDGE; // ä½¿ç”¨ä»»æ„è¾¹ç¼˜ä¸­æ–­
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pin_bit_mask = (1ULL << ECHO_PIN);
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     gpio_config(&io_conf);
 
-    // °²×°ÖĞ¶Ï·şÎñ
+    // å®‰è£…ä¸­æ–­æœåŠ¡
     gpio_install_isr_service(0);
     gpio_isr_handler_add(ECHO_PIN, echo_isr_handler, (void *)ECHO_PIN);
 }
 
-// ÊÍ·Å³¬Éù²¨´«¸ĞÆ÷×ÊÔ´
+// é‡Šæ”¾è¶…å£°æ³¢ä¼ æ„Ÿå™¨èµ„æº
 void ultrasonic_deinit(void)
 {
-    // ÒÆ³ı GPIO ÖĞ¶Ï´¦Àí³ÌĞò
+    // ç§»é™¤ GPIO ä¸­æ–­å¤„ç†ç¨‹åº
     gpio_isr_handler_remove(ECHO_PIN);
 
-    // Ğ¶ÔØÖĞ¶Ï·şÎñ
+    // å¸è½½ä¸­æ–­æœåŠ¡
     gpio_uninstall_isr_service();
 
-    // ÅäÖÃ GPIO ÎªÄ¬ÈÏ×´Ì¬£¨¿ÉÑ¡£©
+    // é…ç½® GPIO ä¸ºé»˜è®¤çŠ¶æ€ï¼ˆå¯é€‰ï¼‰
     gpio_set_direction(TRIGGER_PIN, GPIO_MODE_DISABLE);
     gpio_set_direction(ECHO_PIN, GPIO_MODE_DISABLE);
 }
 
-// ·¢ËÍ´¥·¢Âö³å
+// å‘é€è§¦å‘è„‰å†²
 static void send_trigger_pulse(void)
 {
     gpio_set_level(TRIGGER_PIN, 0);
-    esp_rom_delay_us(2); // ÑÓÊ± 2 Î¢Ãë
+    esp_rom_delay_us(2); // å»¶æ—¶ 2 å¾®ç§’
     gpio_set_level(TRIGGER_PIN, 1);
-    esp_rom_delay_us(10); // ÑÓÊ± 10 Î¢Ãë
+    esp_rom_delay_us(10); // å»¶æ—¶ 10 å¾®ç§’
     gpio_set_level(TRIGGER_PIN, 0);
 }
 
-// ÖĞ¶Ï´¦Àí³ÌĞò
+// ä¸­æ–­å¤„ç†ç¨‹åº
 void IRAM_ATTR echo_isr_handler(void *arg)
 {
     if (gpio_get_level(ECHO_PIN) == 1)
@@ -69,14 +69,14 @@ void IRAM_ATTR echo_isr_handler(void *arg)
     }
 }
 
-// ¼ÆËã²¢·µ»Ø¾àÀë
+// è®¡ç®—å¹¶è¿”å›è·ç¦»
 float ultrasonic_get_distance(void)
 {
     send_trigger_pulse();
-    vTaskDelay(100 / portTICK_PERIOD_MS); // µÈ´ı»Ø²¨ĞÅºÅ
+    vTaskDelay(100 / portTICK_PERIOD_MS); // ç­‰å¾…å›æ³¢ä¿¡å·
 
     int64_t duration = end_time - start_time;
-    float distance = (duration / 2.0) * 0.0343; // 0.0343 cm/us ÎªÉùËÙ
+    float distance = (duration / 2.0) * 0.0343; // 0.0343 cm/us ä¸ºå£°é€Ÿ
     return distance;
 }
 
@@ -86,7 +86,7 @@ void Get_Distance_task(void *pvParameters)
 
     while (1)
     {
-        hcsrdata = ultrasonic_get_distance(); // »ñÈ¡µ±Ç°½Ç¶ÈµÄ¾àÀë
+        hcsrdata = ultrasonic_get_distance(); // è·å–å½“å‰è§’åº¦çš„è·ç¦»
         if (xQueueSend(distanceQueue, &hcsrdata, portMAX_DELAY) != pdPASS)
         {
             ESP_LOGI("xQueueSend error:", "Failed to send data to queue");
